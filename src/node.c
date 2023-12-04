@@ -119,12 +119,32 @@ void prependNodes(Node *node, Node *__extern)
     node->numOfChildren += __extern->numOfChildren;
 }
 
+void appendNodes(Node *node, Node *__extern)
+{
+    // allocate new
+    Node **children = (Node **)malloc(sizeof(Node *) * (node->numOfChildren + __extern->numOfChildren));
+
+
+    // assign
+    for (int i = 0; i < node->numOfChildren; i++)
+        children[__extern->numOfChildren] = node->children[i];
+
+    // append
+    for (int i = 0; i < __extern->numOfChildren; i++)
+        children[node->numOfChildren + i] = __extern->children[i];
+    
+    // free old
+    free(node->children);
+    free(__extern->children);
+    // assign
+    node->children = children;
+
+    // ++
+    node->numOfChildren += __extern->numOfChildren;
+}
+
 void printNode(Node *node, int depth)
 {
-    for (int i = 0; i <= depth - 1; i++)
-        printf("   ");
-    printf("|");
-    printf("\n");
     for (int i = 0; i <= depth - 1; i++)
         printf("   ");
     printf("└--");
@@ -217,18 +237,32 @@ void printNode(Node *node, int depth)
         printf("STATMENTS (%d)", node->line);
         break;
 
-    // defination
+    // statment
     case VAR_DEC_STMT:
-        printf("VARIABLE DECLARE STATMENT (%d)", node->line);
+        printf("VARIABLE DECLARATION STATMENT (%d)", node->line);
         break;
-    case VAR_DEC:
-        printf("VARIABLE DECLARE (%d)", node->line);
-        break;
-
-    // declare
     case VAR_DEF_STMT:
         printf("VARIABLE DEFINATION STATMENT (%d)", node->line);
         break;
+    case FUNC_DEC_STMT:
+        printf("FUNCTION DECLARATION STATMENT (%d)", node->line);
+        break;
+    case FUNC_DEF_STMT:
+        printf("FUNCTION DEFINATION STATMENT (%d)", node->line);
+        break;
+    case STMT:
+        printf("STATMENT (%d)", node->line);
+        break;
+
+    // declare
+    case VAR_DEC:
+        printf("VARIABLE DECLARATION (%d)", node->line);
+        break;
+    case ARG_DEC: 
+        printf("ARGUMENT DECLARATION (%d)", node->line);
+        break;
+
+    // defination
     case VAR_DEF:
         printf("VARIABLE DEFINATION (%d)", node->line);
         break;
@@ -301,6 +335,43 @@ void printNode(Node *node, int depth)
     case POINTER:
         printf("POINTER (%d)", node->line);
         break;
+    case ARG:
+        printf("ARGUMENT (%d)", node->line);
+        break;
+    case FUNC_CALL:
+        printf("FUNCTION CALL (%d)", node->line);
+        break;
+
+    // if else if else
+    case IF:
+        printf("IF (%d)", node->line);
+        break;
+    case ELSE:
+        printf("ELSE (%d)", node->line);
+        break;
+    
+    // while
+    case WHILE:
+        printf("WHILE (%d)", node->line);
+        break;
+    case FOR:
+        printf("FOR (%d)", node->line);
+        break;
+    case FOR_START_STMT:
+        printf("FOR START STATMENT (%d)", node->line);
+        break;
+    case FOR_COND_STMT:
+        printf("FOR CONDITION STATMENT (%d)", node->line);
+        break;
+    case FOR_ITER_EXP:
+        printf("FOR ITERATIVE EXPRESSION (%d)", node->line);
+        break;
+
+    // return
+    case RETURN:
+        printf("RETURN (%d)", node->line);
+        break;
+
     default:
         break;
     }

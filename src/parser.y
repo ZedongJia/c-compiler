@@ -14,11 +14,13 @@
 
 %type <node> Program
 %type <node> GlobalStmts LocalStmts GlobalStmt LocalStmt Stmt
-%type <node> VarDefStmt VarDef FuncDefStmt FuncDef
-%type <node> VarDecStmt VarDec FuncDecStmt FuncDec
+%type <node> VarDefStmt VarDef FuncDefStmt
+%type <node> VarDecStmt VarDec FuncDecStmt
 %type <node> Initializer InitializerList BraceInitializer
+%type <node> ArgDecs ArgDec Args
 %type <node> Exp
 %type <node> TypeSpecifier
+%type <node> If Else While For ForStartStmt ForCondStmt ForIterExp StmtBlock
 
 /* key work */
 %token <node> KW_CONST KW_EXTERN KW_INT KW_FLOAT KW_CHAR KW_VOID KW_RETURN KW_IF KW_ELSE KW_WHILE KW_FOR KW_BREAK KW_CONTINUE KW_TYPEDEF KW_STRUCT
@@ -42,14 +44,20 @@
 /* pretreatment */
 %token PRE_INCLUDE PRE_DEFINE
 /* declare (can be many) */
-%token VAR_DEC_STMT VAR_DEC FUNC_DEC_STMT FUNC_DEC INITIALIZER_LIST
+%token VAR_DEC ARG_DEC INITIALIZER_LIST
 /* define (only once) */
-%token VAR_DEF_STMT VAR_DEF STRUCT_DEF_STMT STRUCT_DEF  FUNC_DEF_STMT FUNC_DEF
+%token VAR_DEF STRUCT_DEF_STMT STRUCT_DEF
 /* statment, statments */
-%token STMTS STMT
+%token VAR_DEC_STMT VAR_DEF_STMT FUNC_DEC_STMT FUNC_DEF_STMT STMTS STMT FUNC_CALL
+
+/* return */
+%token RETURN
+
+%token ARG
+/* if else if else */
+%token IF ELSE WHILE FOR FOR_START_STMT FOR_COND_STMT FOR_ITER_EXP
 
 /* priority */
-%left LCOMMA
 %left COMMA
 %left ID INT FLOAT CHAR
 %left ASSIGN
@@ -58,10 +66,9 @@
 %left STAR DIV
 %left LP RP LC RC
 %left DOT POINTER
-%right UMINUS NOT DPLUS DMINUS
+%right NOT DPLUS DMINUS
 
 /* no priority */
-%nonassoc LOWER_THEN_ELSE
 %nonassoc KW_ELSE
 
 %nonassoc KW_BREAK KW_CONTINUE
@@ -88,8 +95,14 @@ GlobalStmt  : VarDefStmt {
             | VarDecStmt {
                 $$ = $1;
             }
-            | Stmt {
+            | FuncDefStmt {
                 $$ = $1;
+            }
+            | FuncDecStmt {
+                $$ = $1;
+            }
+            | SEMI {
+                $$ = createNode(STMT, NULL, $1->line, level, 0);
             }
             | error SEMI {
                 $$ = NULL;
@@ -111,6 +124,12 @@ LocalStmt   : VarDefStmt {
             }
             | VarDecStmt {
                 $$ = $1;
+            }
+            | Stmt {
+                $$ = $1;
+            }
+            | SEMI {
+                $$ = createNode(STMT, NULL, $1->line, level, 0);
             }
             | error SEMI {
                 $$ = NULL;
@@ -137,13 +156,42 @@ VarDec  : ID {
         }
         ;
 
-FuncDecStmt : {
-                d
+FuncDecStmt : TypeSpecifier ID LP ArgDecs RP SEMI {
+                $$ = createNode(FUNC_DEC_STMT, NULL, $1->line, level, 3, $1, $2, $4);
+            }
+            | KW_CONST TypeSpecifier ID LP ArgDecs RP SEMI {
+                $$ = createNode(FUNC_DEC_STMT, NULL, $1->line, level, 4, $1, $2, $3, $5);
+            }
+            | KW_EXTERN TypeSpecifier ID LP ArgDecs RP SEMI {
+                $$ = createNode(FUNC_DEC_STMT, NULL, $1->line, level, 4, $1, $2, $3, $5);
+            }
+            | TypeSpecifier ID LP RP SEMI {
+                $$ = createNode(FUNC_DEC_STMT, NULL, $1->line, level, 2, $1, $2);
+            }
+            | KW_CONST TypeSpecifier ID LP RP SEMI {
+                $$ = createNode(FUNC_DEC_STMT, NULL, $1->line, level, 3, $1, $2, $3);
+            }
+            | KW_EXTERN TypeSpecifier ID LP RP SEMI {
+                $$ = createNode(FUNC_DEC_STMT, NULL, $1->line, level, 3, $1, $2, $3);
             }
             ;
 
-FuncDec : {
-            d
+ArgDecs : ArgDec {
+            $$ = $1;
+        }
+        | ArgDec COMMA ArgDecs {
+            $$ = createNode(ARG_DEC, NULL, $1->line, level, 2, $1, $3);
+        }
+        ;
+
+ArgDec  : TypeSpecifier ID {
+            $$ = createNode(ARG_DEC, NULL, $1->line, level, 2, $1, $2);
+        }
+        | KW_CONST TypeSpecifier ID {
+            $$ = createNode(ARG_DEC, NULL, $1->line, level, 3, $1, $2, $3);
+        }
+        | KW_EXTERN TypeSpecifier ID {
+            $$ = createNode(ARG_DEC, NULL, $1->line, level, 3, $1, $2, $3);
         }
         ;
 
@@ -185,28 +233,62 @@ VarDef  : ID ASSIGN Initializer {
         }
         ;
 
-FuncDefStmt : {}
+FuncDefStmt : TypeSpecifier ID LP ArgDecs RP LC LocalStmts RC {
+                $$ = createNode(FUNC_DEF_STMT, NULL, $1->line, level, 4, $1, $2, $4, $7);
+            }
+            | KW_CONST TypeSpecifier ID LP ArgDecs RP LC LocalStmts RC {
+                $$ = createNode(FUNC_DEF_STMT, NULL, $1->line, level, 5, $1, $2, $3, $5, $8);
+            }
+            | KW_EXTERN TypeSpecifier ID LP ArgDecs RP LC LocalStmts RC {
+                $$ = createNode(FUNC_DEF_STMT, NULL, $1->line, level, 5, $1, $2, $3, $5, $8);
+            }
+            | TypeSpecifier ID LP RP LC LocalStmts RC {
+                $$ = createNode(FUNC_DEF_STMT, NULL, $1->line, level, 3, $1, $2, $6);
+            }
+            | KW_CONST TypeSpecifier ID LP RP LC LocalStmts RC {
+                $$ = createNode(FUNC_DEF_STMT, NULL, $1->line, level, 4, $1, $2, $3, $7);
+            }
+            | KW_EXTERN TypeSpecifier ID LP RP LC LocalStmts RC {
+                $$ = createNode(FUNC_DEF_STMT, NULL, $1->line, level, 4, $1, $2, $3, $7);
+            }
+            | TypeSpecifier ID LP RP LC RC {
+                $$ = createNode(FUNC_DEF_STMT, NULL, $1->line, level, 2, $1, $2);
+            }
+            | KW_CONST TypeSpecifier ID LP RP LC RC {
+                $$ = createNode(FUNC_DEF_STMT, NULL, $1->line, level, 3, $1, $2, $3);
+            }
+            | KW_EXTERN TypeSpecifier ID LP RP LC RC {
+                $$ = createNode(FUNC_DEF_STMT, NULL, $1->line, level, 3, $1, $2, $3);
+            }
             ;
-FuncDef : {}
-        ;
 
 /* initializer */
 Initializer : INT {
-                $$ = createNode(INITIALIZER_LIST, NULL, $1->line, level, 1, $1);;
+                $$ = createNode(INITIALIZER_LIST, NULL, $1->line, level, 1, $1);
             }
             | FLOAT {
-                $$ = createNode(INITIALIZER_LIST, NULL, $1->line, level, 1, $1);;
+                $$ = createNode(INITIALIZER_LIST, NULL, $1->line, level, 1, $1);
             }
             | CHAR {
-                $$ = createNode(INITIALIZER_LIST, NULL, $1->line, level, 1, $1);;
+                $$ = createNode(INITIALIZER_LIST, NULL, $1->line, level, 1, $1);
             }
             | STRING {
-                $$ = createNode(INITIALIZER_LIST, NULL, $1->line, level, 1, $1);;
+                $$ = createNode(INITIALIZER_LIST, NULL, $1->line, level, 1, $1);
+            }
+            | Exp {
+                $$ = createNode(INITIALIZER_LIST, NULL, $1->line, level, 1, $1);
             }
             ;
 
+/* 
+    {1,1,1}
+    {}
+ */
 BraceInitializer    : LC InitializerList RC {
                         $$ = $2;
+                    }
+                    | LC RC {
+                        $$ = createNode(INITIALIZER_LIST, NULL, $1->line, level, 0);
                     }
                     ;
 
@@ -241,16 +323,34 @@ TypeSpecifier   : KW_INT {
                 ;
 
 /* statment */
-Stmt    : Exp SEMI {}
+Stmt    : Exp SEMI {
+            $$ = $1;
+        }
+        | If {
+            $$ = $1;
+        }
+        | While {
+            $$ = $1;
+        }
+        | For {
+            $$ = $1;
+        }
+        | KW_RETURN Exp SEMI {
+            $$ = createNode(RETURN, NULL, $1->line, level, 1, $2);
+        }
         ;
 
+/* arguments */
+Args    : Exp {
+            $$ = createNode(ARG, NULL, $1->line, level, 1, $1);
+        }
+        | Exp COMMA Args {
+            $$ = createNode(ARG, NULL, $1->line, level, 2, $1, $3);
+        }
+        ;
 
 /* expression */
 /* TODO: assign exp left can not be int / float / char / string */
-/* %token <node> 
-
-%token <node> DOT POINTER
- */
 Exp : Exp ASSIGN Exp {
         $$ = createNode(ASSIGN, NULL, $1->line, level, 2, $1, $3);
     }
@@ -322,6 +422,12 @@ Exp : Exp ASSIGN Exp {
     | LP Exp RP {
         $$ = $1;
     }
+    | ID LP Args RP {
+        $$ = createNode(FUNC_CALL, NULL, $1->line, level, 2, $1, $3);
+    }
+    | ID LP RP {
+        $$ = createNode(FUNC_CALL, NULL, $1->line, level, 0);
+    }
     /* base type */
     | INT {
         $$ = $1;
@@ -340,6 +446,95 @@ Exp : Exp ASSIGN Exp {
     }
     ;
 
+/* if else if... else */
+/* 
+    if ()
+        stmt
+    if ();
+    if () 
+    {
+        stmts
+    }
+    if ()
+    {
+
+    }
+
+ */
+If  : KW_IF LP Exp RP StmtBlock {
+        $$ = createNode(IF, NULL, $1->line, level, 2, $3, $5);
+    }
+    | KW_IF LP Exp RP StmtBlock Else {
+        $$ = createNode(IF, NULL, $1->line, level, 3, $3, $5, $6);
+    }
+    ;
+Else    : KW_ELSE StmtBlock {
+            $$ = createNode(ELSE, NULL, $1->line, level, 1, $2);
+        }
+        ;
+
+/* while */
+While   : KW_WHILE LP Exp RP StmtBlock {
+            $$ = createNode(WHILE, NULL, $1->line, level, 2, $3, $5);
+        }
+        ;
+
+/* for */
+For : KW_FOR LP ForStartStmt ForCondStmt ForIterExp RP StmtBlock {
+        $$ = createNode(FOR, NULL, $1->line, level, 4, $3, $4, $5, $7);
+    }
+    | KW_FOR LP ForStartStmt ForCondStmt RP StmtBlock {
+        $$ = createNode(FOR, NULL, $1->line, level, 3, $3, $4, $6);
+    }
+    ;
+ForStartStmt    : VarDefStmt {
+                    $$ = createNode(FOR_START_STMT, NULL, $1->line, level, 1, $1);
+                }
+                | Exp SEMI {
+                    $$ = createNode(FOR_START_STMT, NULL, $1->line, level, 1, $1);
+                }
+                | SEMI {
+                    $$ = createNode(FOR_START_STMT, NULL, $1->line, level, 0);
+                }
+                ;
+ForCondStmt     : Exp SEMI {
+                    $$ = createNode(FOR_COND_STMT, NULL, $1->line, level, 1, $1);
+                }
+                | SEMI {
+                    $$ = createNode(FOR_COND_STMT, NULL, $1->line, level, 0);
+                }
+                ;
+
+ForIterExp      : Exp {
+                    $$ = createNode(FOR_ITER_EXP, NULL, $1->line, level, 1, $1);;
+                }
+                ;
+
+/* 
+    {
+        stmts
+    }
+    - or -
+    stmt
+    - or -
+    {
+
+    }
+
+
+
+    -> align to STMS
+ */
+StmtBlock   : LocalStmt {
+                $$ = createNode(STMTS, NULL, $1->line, level, 1, $1);
+            }
+            | LC LocalStmts RC {
+                $$ = $2;
+            }
+            | LC RC {
+                $$ = createNode(STMTS, NULL, $1->line, level, 0);
+            }
+            ;
 %%
 void yyerror(const char* fmt, ...)
 {

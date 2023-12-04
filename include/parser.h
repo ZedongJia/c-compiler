@@ -98,22 +98,28 @@
      PROGRAM = 314,
      PRE_INCLUDE = 315,
      PRE_DEFINE = 316,
-     VAR_DEC_STMT = 317,
-     VAR_DEC = 318,
-     FUNC_DEC_STMT = 319,
-     FUNC_DEC = 320,
-     INITIALIZER_LIST = 321,
-     VAR_DEF_STMT = 322,
-     VAR_DEF = 323,
-     STRUCT_DEF_STMT = 324,
-     STRUCT_DEF = 325,
+     VAR_DEC = 317,
+     ARG_DEC = 318,
+     INITIALIZER_LIST = 319,
+     VAR_DEF = 320,
+     STRUCT_DEF_STMT = 321,
+     STRUCT_DEF = 322,
+     VAR_DEC_STMT = 323,
+     VAR_DEF_STMT = 324,
+     FUNC_DEC_STMT = 325,
      FUNC_DEF_STMT = 326,
-     FUNC_DEF = 327,
-     STMTS = 328,
-     STMT = 329,
-     LCOMMA = 330,
-     UMINUS = 331,
-     LOWER_THEN_ELSE = 332
+     STMTS = 327,
+     STMT = 328,
+     FUNC_CALL = 329,
+     RETURN = 330,
+     ARG = 331,
+     IF = 332,
+     ELSE = 333,
+     WHILE = 334,
+     FOR = 335,
+     FOR_START_STMT = 336,
+     FOR_COND_STMT = 337,
+     FOR_ITER_EXP = 338
    };
 #endif
 
@@ -131,7 +137,7 @@ typedef union YYSTYPE
 
 
 /* Line 1676 of yacc.c  */
-#line 135 "include/parser.h"
+#line 141 "include/parser.h"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
