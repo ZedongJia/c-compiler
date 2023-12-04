@@ -1,5 +1,6 @@
 void a;
-
+// const int a[5];
+// const int b[5][6], c[5][6];
 int a, a = 5, b;
 ;
 ;

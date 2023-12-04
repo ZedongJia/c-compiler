@@ -14,13 +14,17 @@
 
 %type <node> Program
 %type <node> GlobalStmts LocalStmts GlobalStmt LocalStmt Stmt
-%type <node> VarDefStmt VarDef FuncDefStmt
-%type <node> VarDecStmt VarDec FuncDecStmt
+%type <node> VarDefStmt FuncDefStmt
+%type <node> VarDecStmt FuncDecStmt ArrayDecStmt
+%type <node> VarDef
+%type <node> VarDec ArrayDec ArgDecs ArgDec
+%type <node> ArrayDim
 %type <node> Initializer InitializerList BraceInitializer
-%type <node> ArgDecs ArgDec Args
+%type <node> Args
 %type <node> Exp
 %type <node> TypeSpecifier
 %type <node> If Else While For ForStartStmt ForCondStmt ForIterExp StmtBlock
+%type <node> Modifier
 
 /* key work */
 %token <node> KW_CONST KW_EXTERN KW_INT KW_FLOAT KW_CHAR KW_VOID KW_RETURN KW_IF KW_ELSE KW_WHILE KW_FOR KW_BREAK KW_CONTINUE KW_TYPEDEF KW_STRUCT
@@ -44,11 +48,18 @@
 /* pretreatment */
 %token PRE_INCLUDE PRE_DEFINE
 /* declare (can be many) */
-%token VAR_DEC ARG_DEC INITIALIZER_LIST
+%token VAR_DEC ARG_DEC INITIALIZER_LIST ARRAY_DEC
 /* define (only once) */
 %token VAR_DEF STRUCT_DEF_STMT STRUCT_DEF
+/* modifier */
+%token MODIFIER
+/* array */
+%token ARRAY_DIM
 /* statment, statments */
-%token VAR_DEC_STMT VAR_DEF_STMT FUNC_DEC_STMT FUNC_DEF_STMT STMTS STMT FUNC_CALL
+%token VAR_DEC_STMT VAR_DEF_STMT
+%token ARRAY_DEC_STMT
+%token FUNC_DEC_STMT FUNC_DEF_STMT FUNC_CALL
+%token STMTS STMT
 
 /* return */
 %token RETURN
@@ -137,13 +148,7 @@ LocalStmt   : VarDefStmt {
             ;
 
 /* declare */
-VarDecStmt  : TypeSpecifier VarDec SEMI {
-                $$ = createNode(VAR_DEC_STMT, NULL, $1->line, level, 2, $1, $2);
-            }
-            | KW_CONST TypeSpecifier VarDec SEMI {
-                $$ = createNode(VAR_DEC_STMT, NULL, $1->line, level, 3, $1, $2, $3);
-            }
-            | KW_EXTERN TypeSpecifier VarDec SEMI {
+VarDecStmt  : Modifier TypeSpecifier VarDec SEMI {
                 $$ = createNode(VAR_DEC_STMT, NULL, $1->line, level, 3, $1, $2, $3);
             }
             ;
@@ -156,22 +161,10 @@ VarDec  : ID {
         }
         ;
 
-FuncDecStmt : TypeSpecifier ID LP ArgDecs RP SEMI {
-                $$ = createNode(FUNC_DEC_STMT, NULL, $1->line, level, 3, $1, $2, $4);
-            }
-            | KW_CONST TypeSpecifier ID LP ArgDecs RP SEMI {
+FuncDecStmt : Modifier TypeSpecifier ID LP ArgDecs RP SEMI {
                 $$ = createNode(FUNC_DEC_STMT, NULL, $1->line, level, 4, $1, $2, $3, $5);
             }
-            | KW_EXTERN TypeSpecifier ID LP ArgDecs RP SEMI {
-                $$ = createNode(FUNC_DEC_STMT, NULL, $1->line, level, 4, $1, $2, $3, $5);
-            }
-            | TypeSpecifier ID LP RP SEMI {
-                $$ = createNode(FUNC_DEC_STMT, NULL, $1->line, level, 2, $1, $2);
-            }
-            | KW_CONST TypeSpecifier ID LP RP SEMI {
-                $$ = createNode(FUNC_DEC_STMT, NULL, $1->line, level, 3, $1, $2, $3);
-            }
-            | KW_EXTERN TypeSpecifier ID LP RP SEMI {
+            | Modifier TypeSpecifier ID LP RP SEMI {
                 $$ = createNode(FUNC_DEC_STMT, NULL, $1->line, level, 3, $1, $2, $3);
             }
             ;
@@ -184,26 +177,24 @@ ArgDecs : ArgDec {
         }
         ;
 
-ArgDec  : TypeSpecifier ID {
-            $$ = createNode(ARG_DEC, NULL, $1->line, level, 2, $1, $2);
-        }
-        | KW_CONST TypeSpecifier ID {
-            $$ = createNode(ARG_DEC, NULL, $1->line, level, 3, $1, $2, $3);
-        }
-        | KW_EXTERN TypeSpecifier ID {
+ArgDec  : Modifier TypeSpecifier ID {
             $$ = createNode(ARG_DEC, NULL, $1->line, level, 3, $1, $2, $3);
         }
         ;
 
+
+ArrayDecStmt    : Modifier TypeSpecifier ArrayDec SEMI {
+                    $$ = createNode(VAR_DEC_STMT, NULL, $1->line, level, 3, $1, $2, $3);
+                }
+                ;
+
+ArrayDec    : {}
+            | {}
+            ;
+
 /* defination */
 
-VarDefStmt  : TypeSpecifier VarDef SEMI {
-                $$ = createNode(VAR_DEF_STMT, NULL, $1->line, level, 2, $1, $2);
-            }
-            | KW_CONST TypeSpecifier VarDef SEMI {
-                $$ = createNode(VAR_DEF_STMT, NULL, $1->line, level, 3, $1, $2, $3);
-            }
-            | KW_EXTERN TypeSpecifier VarDef SEMI {
+VarDefStmt  : Modifier TypeSpecifier VarDef SEMI {
                 $$ = createNode(VAR_DEF_STMT, NULL, $1->line, level, 3, $1, $2, $3);
             }
             ;
@@ -233,34 +224,37 @@ VarDef  : ID ASSIGN Initializer {
         }
         ;
 
-FuncDefStmt : TypeSpecifier ID LP ArgDecs RP LC LocalStmts RC {
-                $$ = createNode(FUNC_DEF_STMT, NULL, $1->line, level, 4, $1, $2, $4, $7);
-            }
-            | KW_CONST TypeSpecifier ID LP ArgDecs RP LC LocalStmts RC {
+FuncDefStmt : Modifier TypeSpecifier ID LP ArgDecs RP LC LocalStmts RC {
                 $$ = createNode(FUNC_DEF_STMT, NULL, $1->line, level, 5, $1, $2, $3, $5, $8);
             }
-            | KW_EXTERN TypeSpecifier ID LP ArgDecs RP LC LocalStmts RC {
-                $$ = createNode(FUNC_DEF_STMT, NULL, $1->line, level, 5, $1, $2, $3, $5, $8);
-            }
-            | TypeSpecifier ID LP RP LC LocalStmts RC {
-                $$ = createNode(FUNC_DEF_STMT, NULL, $1->line, level, 3, $1, $2, $6);
-            }
-            | KW_CONST TypeSpecifier ID LP RP LC LocalStmts RC {
+            | Modifier TypeSpecifier ID LP RP LC LocalStmts RC {
                 $$ = createNode(FUNC_DEF_STMT, NULL, $1->line, level, 4, $1, $2, $3, $7);
             }
-            | KW_EXTERN TypeSpecifier ID LP RP LC LocalStmts RC {
-                $$ = createNode(FUNC_DEF_STMT, NULL, $1->line, level, 4, $1, $2, $3, $7);
+            | Modifier TypeSpecifier ID LP ArgDecs RP LC RC {
+                $$ = createNode(FUNC_DEF_STMT, NULL, $1->line, level, 4, $1, $2, $3, $5);
             }
-            | TypeSpecifier ID LP RP LC RC {
-                $$ = createNode(FUNC_DEF_STMT, NULL, $1->line, level, 2, $1, $2);
-            }
-            | KW_CONST TypeSpecifier ID LP RP LC RC {
-                $$ = createNode(FUNC_DEF_STMT, NULL, $1->line, level, 3, $1, $2, $3);
-            }
-            | KW_EXTERN TypeSpecifier ID LP RP LC RC {
+            | Modifier TypeSpecifier ID LP RP LC RC {
                 $$ = createNode(FUNC_DEF_STMT, NULL, $1->line, level, 3, $1, $2, $3);
             }
             ;
+
+/* modifier */
+Modifier    : {
+                $$ = createNode(MODIFIER, NULL, yylineno, level, 0)
+            }
+            | KW_EXTERN {
+                $$ = createNode(MODIFIER, NULL, $1->line, level, 1, $1);
+            }
+            | KW_CONST {
+                $$ = createNode(MODIFIER, NULL, $1->line, level, 1, $1);
+            }
+            ;
+
+
+/* array dimension */
+ArrayDim    : {}
+            ;
+
 
 /* initializer */
 Initializer : INT {
@@ -515,14 +509,11 @@ ForIterExp      : Exp {
         stmts
     }
     - or -
-    stmt
+    stmtsa
     - or -
     {
 
     }
-
-
-
     -> align to STMS
  */
 StmtBlock   : LocalStmt {

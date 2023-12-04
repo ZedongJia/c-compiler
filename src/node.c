@@ -270,6 +270,10 @@ void printNode(Node *node, int depth)
         printf("INITIALIZER LIST (%d)", node->line);
         break;
 
+    case MODIFIER:
+        printf("MODIFIER (%d)", node->line);
+        break;
+
     // symbol (2 expression)
     case ASSIGN:
         printf("ASSIGN (%d)", node->line);

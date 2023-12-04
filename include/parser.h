@@ -101,25 +101,29 @@
      VAR_DEC = 317,
      ARG_DEC = 318,
      INITIALIZER_LIST = 319,
-     VAR_DEF = 320,
-     STRUCT_DEF_STMT = 321,
-     STRUCT_DEF = 322,
-     VAR_DEC_STMT = 323,
-     VAR_DEF_STMT = 324,
-     FUNC_DEC_STMT = 325,
-     FUNC_DEF_STMT = 326,
-     STMTS = 327,
-     STMT = 328,
-     FUNC_CALL = 329,
-     RETURN = 330,
-     ARG = 331,
-     IF = 332,
-     ELSE = 333,
-     WHILE = 334,
-     FOR = 335,
-     FOR_START_STMT = 336,
-     FOR_COND_STMT = 337,
-     FOR_ITER_EXP = 338
+     ARRAY_DEC = 320,
+     VAR_DEF = 321,
+     STRUCT_DEF_STMT = 322,
+     STRUCT_DEF = 323,
+     MODIFIER = 324,
+     ARRAY_DIM = 325,
+     VAR_DEC_STMT = 326,
+     VAR_DEF_STMT = 327,
+     ARRAY_DEC_STMT = 328,
+     FUNC_DEC_STMT = 329,
+     FUNC_DEF_STMT = 330,
+     FUNC_CALL = 331,
+     STMTS = 332,
+     STMT = 333,
+     RETURN = 334,
+     ARG = 335,
+     IF = 336,
+     ELSE = 337,
+     WHILE = 338,
+     FOR = 339,
+     FOR_START_STMT = 340,
+     FOR_COND_STMT = 341,
+     FOR_ITER_EXP = 342
    };
 #endif
 
@@ -137,7 +141,7 @@ typedef union YYSTYPE
 
 
 /* Line 1676 of yacc.c  */
-#line 141 "include/parser.h"
+#line 145 "include/parser.h"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
