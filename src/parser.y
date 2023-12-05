@@ -14,10 +14,10 @@
 }
 
 %type <node> Program
-%type <node> GlobalStmts LocalStmts GlobalStmt LocalStmt Stmt
-%type <node> VarDefStmt FuncDefStmt
+%type <node> GlobalStmts LocalStmts GlobalStmt LocalStmt Stmt StructMemStmts StructMemStmt
+%type <node> VarDefStmt FuncDefStmt StructDefStmt
 %type <node> VarDecStmt FuncDecStmt
-%type <node> VarDef
+%type <node> VarDef StructDef
 %type <node> VarDec ArgDecs ArgDec
 %type <node> Var
 %type <node> Stars
@@ -25,9 +25,8 @@
 %type <node> Initializer InitializerList BraceInitializer
 %type <node> Args
 %type <node> Exp
-%type <node> TypeSpecifier
+%type <node> TypeSpecifier Type Modifier
 %type <node> If Else While For ForStartStmt ForCondStmt ForIterExp StmtBlock
-%type <node> Modifier
 
 /* key work */
 %token <node> KW_CONST KW_EXTERN KW_INT KW_FLOAT KW_CHAR KW_VOID KW_RETURN KW_IF KW_ELSE KW_WHILE KW_FOR KW_BREAK KW_CONTINUE KW_TYPEDEF KW_STRUCT
@@ -52,18 +51,17 @@
 /* pretreatment */
 %token PRE_INCLUDE PRE_DEFINE
 /* declare (can be many) */
-%token VAR_DEC ARG_DEC INITIALIZER_LIST ARRAY_DEC
+%token VAR_DEC ARG_DEC INITIALIZER_LIST
 /* define (only once) */
 %token VAR_DEF STRUCT_DEF_STMT STRUCT_DEF
 /* modifier */
-%token MODIFIER
+%token MODIFIER SPECIFIER
 /* var */
 %token VAR VAR_ARRAY VAR_POINTER VAR_ARRAY_POINTER VAR_POINTER_ARRAY
 /* array */
 %token ARRAY_DIM
 /* statment, statments */
 %token VAR_DEC_STMT VAR_DEF_STMT
-%token ARRAY_DEC_STMT
 %token FUNC_DEC_STMT FUNC_DEF_STMT FUNC_CALL
 %token STMTS STMT
 
@@ -109,6 +107,7 @@ GlobalStmts : GlobalStmt {
                 $$ = $2;
             }
             ;
+
 GlobalStmt  : VarDefStmt {
                 $$ = $1;
             }
@@ -119,6 +118,9 @@ GlobalStmt  : VarDefStmt {
                 $$ = $1;
             }
             | FuncDecStmt {
+                $$ = $1;
+            }
+            | StructDefStmt {
                 $$ = $1;
             }
             | SEMI {
@@ -156,9 +158,35 @@ LocalStmt   : VarDefStmt {
             }
             ;
 
+StructMemStmts  : StructMemStmt {
+                    $$ = createNode(STMTS, NULL, $1->line, level, 1, $1);
+                }
+                | StructMemStmt StructMemStmts {
+                    if ($1 != NULL) {
+                    prependNode($2,$1);
+                    }
+                    $$ = $2;
+                }
+                ;
+
+StructMemStmt   : VarDefStmt {
+                    $$ = $1;
+                }
+                | VarDecStmt {
+                    $$ = $1;
+                }
+                | SEMI {
+                    $$ = createNode(STMT, NULL, $1->line, level, 0);
+                }
+                | error SEMI {
+                    $$ = NULL;
+                }
+                ;
+
+
 /* declare */
-VarDecStmt  : Modifier TypeSpecifier VarDec SEMI {
-                $$ = createNode(VAR_DEC_STMT, NULL, $1->line, level, 3, $1, $2, $3);
+VarDecStmt  : TypeSpecifier VarDec SEMI {
+                $$ = createNode(VAR_DEC_STMT, NULL, $1->line, level, 2, $1, $2);
             }
             ;
 
@@ -170,11 +198,11 @@ VarDec  : Var {
         }
         ;
 
-FuncDecStmt : Modifier TypeSpecifier ID LP ArgDecs RP SEMI {
-                $$ = createNode(FUNC_DEC_STMT, NULL, $1->line, level, 4, $1, $2, $3, $5);
+FuncDecStmt : TypeSpecifier ID LP ArgDecs RP SEMI {
+                $$ = createNode(FUNC_DEC_STMT, NULL, $1->line, level, 3, $1, $2, $4);
             }
-            | Modifier TypeSpecifier ID LP RP SEMI {
-                $$ = createNode(FUNC_DEC_STMT, NULL, $1->line, level, 3, $1, $2, $3);
+            | TypeSpecifier ID LP RP SEMI {
+                $$ = createNode(FUNC_DEC_STMT, NULL, $1->line, level, 2, $1, $2);
             }
             ;
 
@@ -186,15 +214,15 @@ ArgDecs : ArgDec {
         }
         ;
 
-ArgDec  : Modifier TypeSpecifier Var {
-            $$ = createNode(ARG_DEC, NULL, $1->line, level, 3, $1, $2, $3);
+ArgDec  : TypeSpecifier Var {
+            $$ = createNode(ARG_DEC, NULL, $1->line, level, 2, $1, $2);
         }
         ;
 
 /* defination */
 
-VarDefStmt  : Modifier TypeSpecifier VarDef SEMI {
-                $$ = createNode(VAR_DEF_STMT, NULL, $1->line, level, 3, $1, $2, $3);
+VarDefStmt  : TypeSpecifier VarDef SEMI {
+                $$ = createNode(VAR_DEF_STMT, NULL, $1->line, level, 2, $1, $2);
             }
             ;
 
@@ -223,17 +251,36 @@ VarDef  : Var ASSIGN Initializer {
         }
         ;
 
-FuncDefStmt : Modifier TypeSpecifier ID LP ArgDecs RP LC LocalStmts RC {
-                $$ = createNode(FUNC_DEF_STMT, NULL, $1->line, level, 5, $1, $2, $3, $5, $8);
+FuncDefStmt : TypeSpecifier ID LP ArgDecs RP LC LocalStmts RC {
+                $$ = createNode(FUNC_DEF_STMT, NULL, $1->line, level, 4, $1, $2, $4, $7);
             }
-            | Modifier TypeSpecifier ID LP RP LC LocalStmts RC {
-                $$ = createNode(FUNC_DEF_STMT, NULL, $1->line, level, 4, $1, $2, $3, $7);
+            | TypeSpecifier ID LP RP LC LocalStmts RC {
+                $$ = createNode(FUNC_DEF_STMT, NULL, $1->line, level, 3, $1, $2, $6);
             }
-            | Modifier TypeSpecifier ID LP ArgDecs RP LC RC {
-                $$ = createNode(FUNC_DEF_STMT, NULL, $1->line, level, 4, $1, $2, $3, $5);
+            | TypeSpecifier ID LP ArgDecs RP LC RC {
+                $$ = createNode(FUNC_DEF_STMT, NULL, $1->line, level, 3, $1, $2, $4);
             }
-            | Modifier TypeSpecifier ID LP RP LC RC {
-                $$ = createNode(FUNC_DEF_STMT, NULL, $1->line, level, 3, $1, $2, $3);
+            | TypeSpecifier ID LP RP LC RC {
+                $$ = createNode(FUNC_DEF_STMT, NULL, $1->line, level, 2, $1, $2);
+            }
+            ;
+
+StructDefStmt   : StructDef SEMI {
+                    $$ = createNode(STRUCT_DEF_STMT, NULL, $1->line, level, 1, $1);
+                }
+                | StructDef VarDef SEMI {
+                    $$ = createNode(STRUCT_DEF_STMT, NULL, $1->line, level, 2, $1, $2);
+                }
+                | StructDef VarDec SEMI {
+                    $$ = createNode(STRUCT_DEF_STMT, NULL, $1->line, level, 2, $1, $2);
+                }
+                ;
+
+StructDef   : TypeSpecifier LC StructMemStmts RC {
+                $$ = createNode(STRUCT_DEF, NULL, $1->line, level, 2, $1, $3);
+            }
+            | TypeSpecifier LC RC {
+                $$ = createNode(STRUCT_DEF, NULL, $1->line, level, 1, $1);
             }
             ;
 
@@ -260,20 +307,6 @@ Var : ID {
         $$ = createNode(VAR_POINTER_ARRAY, NULL, $1->line, level, 3, $1, $2, $3);
     }
     ;
-
-
-/* modifier */
-Modifier    : {
-                $$ = createNode(MODIFIER, NULL, yylineno, level, 0)
-            }
-            | KW_EXTERN {
-                $$ = createNode(MODIFIER, NULL, $1->line, level, 1, $1);
-            }
-            | KW_CONST {
-                $$ = createNode(MODIFIER, NULL, $1->line, level, 1, $1);
-            }
-            ;
-
 
 /* stars */
 Stars   : STAR {
@@ -347,7 +380,7 @@ InitializerList : Initializer {
                     $$ = $1;
                 }
                 | Initializer COMMA InitializerList {
-                    prependNode($3, $1);
+                    prependNodes($3, $1);
                     $$ = $3;
                 }
                 | BraceInitializer COMMA InitializerList {
@@ -356,19 +389,43 @@ InitializerList : Initializer {
                 }
                 ;
 /* type specifier */
-TypeSpecifier   : KW_INT {
-                    $$ = $1;
+Modifier    : {
+                $$ = createNode(MODIFIER, NULL, yylineno, level, 0)
+            }
+            | KW_EXTERN {
+                $$ = createNode(MODIFIER, NULL, $1->line, level, 1, $1);
+            }
+            | KW_CONST {
+                $$ = createNode(MODIFIER, NULL, $1->line, level, 1, $1);
+            }
+            ;
+
+
+TypeSpecifier   : Modifier Type {
+                    $$ = createNode(SPECIFIER, NULL, $1->line, level, 2, $1, $2);
                 }
-                | KW_FLOAT {
-                    $$ = $1;
-                }
-                | KW_CHAR {
-                    $$ = $1;
-                }
-                | KW_VOID {
-                    $$ = $1;
+                | Type Modifier {
+                    $$ = createNode(SPECIFIER, NULL, $1->line, level, 2, $2, $1);
                 }
                 ;
+
+Type    : KW_INT {
+            $$ = $1;
+        }
+        | KW_FLOAT {
+            $$ = $1;
+        }
+        | KW_CHAR {
+            $$ = $1;
+        }
+        | KW_VOID {
+            $$ = $1;
+        }
+        | KW_STRUCT ID {
+            appendNode($1, $2);
+            $$ = $1;
+        }
+        ;
 
 /* statment */
 Stmt    : Exp SEMI {
@@ -385,6 +442,9 @@ Stmt    : Exp SEMI {
         }
         | KW_RETURN Exp SEMI {
             $$ = createNode(RETURN, NULL, $1->line, level, 1, $2);
+        }
+        | KW_RETURN SEMI {
+            $$ = createNode(RETURN, NULL, $1->line, level, 0);
         }
         ;
 

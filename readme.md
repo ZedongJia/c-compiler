@@ -103,5 +103,12 @@ int *a[10]
 ...
 
 ### 结构体
+```
+struct test {
+    int a;
+    char b;
+};
 
+struct a;
+```
 ...

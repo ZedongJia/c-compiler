@@ -146,265 +146,280 @@ void printNode(Node *node, int depth)
 {
     for (int i = 0; i <= depth - 1; i++)
         printf("   ");
+    printf("|");
+    printf("\n");
+    for (int i = 0; i <= depth - 1; i++)
+        printf("   ");
     printf("└--");
     switch (node->type)
     {
 
     // key word
     case KW_CONST:
-        printf("KEY WORK:%s (%d)", "const", node->line);
+        printf("KEY WORD:%s \033[32m(%d)\033[0m", "const", node->line);
         break;
     case KW_EXTERN:
-        printf("KEY WORK:%s (%d)", "extern", node->line);
+        printf("KEY WORD:%s \033[32m(%d)\033[0m", "extern", node->line);
         break;
     case KW_INT:
-        printf("KEY WORK:%s (%d)", "int", node->line);
+        printf("KEY WORD:%s \033[32m(%d)\033[0m", "int", node->line);
         break;
     case KW_FLOAT:
-        printf("KEY WORK:%s (%d)", "float", node->line);
+        printf("KEY WORD:%s \033[32m(%d)\033[0m", "float", node->line);
         break;
     case KW_CHAR:
-        printf("KEY WORK:%s (%d)", "char", node->line);
+        printf("KEY WORD:%s \033[32m(%d)\033[0m", "char", node->line);
         break;
     case KW_VOID:
-        printf("KEY WORK:%s (%d)", "void", node->line);
+        printf("KEY WORD:%s \033[32m(%d)\033[0m", "void", node->line);
         break;
     case KW_RETURN:
-        printf("KEY WORK:%s (%d)", "return", node->line);
+        printf("KEY WORD:%s \033[32m(%d)\033[0m", "return", node->line);
         break;
     case KW_IF:
-        printf("KEY WORK:%s (%d)", "if", node->line);
+        printf("KEY WORD:%s \033[32m(%d)\033[0m", "if", node->line);
         break;
     case KW_ELSE:
-        printf("KEY WORK:%s (%d)", "else", node->line);
+        printf("KEY WORD:%s \033[32m(%d)\033[0m", "else", node->line);
         break;
     case KW_WHILE:
-        printf("KEY WORK:%s (%d)", "while", node->line);
+        printf("KEY WORD:%s \033[32m(%d)\033[0m", "while", node->line);
         break;
     case KW_FOR:
-        printf("KEY WORK:%s (%d)", "for", node->line);
+        printf("KEY WORD:%s \033[32m(%d)\033[0m", "for", node->line);
         break;
     case KW_BREAK:
-        printf("KEY WORK:%s (%d)", "break", node->line);
+        printf("KEY WORD:%s \033[32m(%d)\033[0m", "break", node->line);
         break;
     case KW_CONTINUE:
-        printf("KEY WORK:%s (%d)", "continue", node->line);
+        printf("KEY WORD:%s \033[32m(%d)\033[0m", "continue", node->line);
         break;
     case KW_TYPEDEF:
-        printf("KEY WORK:%s (%d)", "typedef", node->line);
+        printf("KEY WORD:%s \033[32m(%d)\033[0m", "typedef", node->line);
         break;
     case KW_STRUCT:
-        printf("KEY WORK:%s (%d)", "struct", node->line);
+        printf("KEY WORD:%s \033[32m(%d)\033[0m", "struct", node->line);
         break;
 
     // variable type
     case INT:
-        printf("TYPE:%s, VALUE:%s (%d)", "int", node->val, node->line);
+        printf("TYPE:%s, VALUE:%s \033[32m(%d)\033[0m", "int", node->val, node->line);
         break;
     case FLOAT:
     case OCT:
     case HEX:
-        printf("TYPE:%s, VALUE:%s (%d)", "float", node->val, node->line);
+        printf("TYPE:%s, VALUE:%s \033[32m(%d)\033[0m", "float", node->val, node->line);
         break;
     case CHAR:
-        printf("TYPE:%s, VALUE:%s (%d)", "char", node->val, node->line);
+        printf("TYPE:%s, VALUE:%s \033[32m(%d)\033[0m", "char", node->val, node->line);
         break;
     case STRING:
-        printf("TYPE:%s, VALUE:%s (%d)", "string", node->val, node->line);
+        printf("TYPE:%s, VALUE:%s \033[32m(%d)\033[0m", "string", node->val, node->line);
+        break;
+
+    // type specifier
+    case SPECIFIER:
+        printf("SPECIFIER \033[32m(%d)\033[0m", node->line);
         break;
 
     // identify
     case ID:
-        printf("IDENTITY:%s (%d)", node->val, node->line);
+        printf("IDENTITY:%s \033[32m(%d)\033[0m", node->val, node->line);
         break;
 
     // pretreatment key word
     case INCLUDE:
-        printf("PRETREATMENT:%s (%d)", "include", node->line);
+        printf("PRETREATMENT:%s \033[32m(%d)\033[0m", "include", node->line);
         break;
     case DEFINE:
-        printf("PRETREATMENT:%s (%d)", "define", node->line);
+        printf("PRETREATMENT:%s \033[32m(%d)\033[0m", "define", node->line);
         break;
 
     // program
     case PROGRAM:
-        printf("PROGRAM (%d)", node->line);
+        printf("PROGRAM \033[32m(%d)\033[0m", node->line);
         break;
 
     // statments
     case STMTS:
-        printf("STATMENTS (%d)", node->line);
+        printf("STATMENTS \033[32m(%d)\033[0m", node->line);
         break;
 
     // statment
     case VAR_DEC_STMT:
-        printf("VARIABLE DECLARATION STATMENT (%d)", node->line);
+        printf("VARIABLE DECLARATION STATMENT \033[32m(%d)\033[0m", node->line);
         break;
     case VAR_DEF_STMT:
-        printf("VARIABLE DEFINATION STATMENT (%d)", node->line);
+        printf("VARIABLE DEFINATION STATMENT \033[32m(%d)\033[0m", node->line);
         break;
     case FUNC_DEC_STMT:
-        printf("FUNCTION DECLARATION STATMENT (%d)", node->line);
+        printf("FUNCTION DECLARATION STATMENT \033[32m(%d)\033[0m", node->line);
         break;
     case FUNC_DEF_STMT:
-        printf("FUNCTION DEFINATION STATMENT (%d)", node->line);
+        printf("FUNCTION DEFINATION STATMENT \033[32m(%d)\033[0m", node->line);
         break;
     case STMT:
-        printf("STATMENT (%d)", node->line);
+        printf("STATMENT \033[32m(%d)\033[0m", node->line);
+        break;
+    case STRUCT_DEF_STMT:
+        printf("STRUCT DEFINATION STATMENT \033[32m(%d)\033[0m", node->line);
         break;
 
     // declare
     case VAR_DEC:
-        printf("VARIABLE DECLARATION (%d)", node->line);
+        printf("VARIABLE DECLARATION \033[32m(%d)\033[0m", node->line);
         break;
     case ARG_DEC:
-        printf("ARGUMENT DECLARATION (%d)", node->line);
+        printf("ARGUMENT DECLARATION \033[32m(%d)\033[0m", node->line);
         break;
 
     // defination
     case VAR_DEF:
-        printf("VARIABLE DEFINATION (%d)", node->line);
+        printf("VARIABLE DEFINATION \033[32m(%d)\033[0m", node->line);
         break;
     case INITIALIZER_LIST:
-        printf("INITIALIZER LIST (%d)", node->line);
+        printf("INITIALIZER LIST \033[32m(%d)\033[0m", node->line);
+        break;
+    case STRUCT_DEF:
+        printf("STRUCT DEFINATION \033[32m(%d)\033[0m", node->line);
         break;
 
     case MODIFIER:
-        printf("MODIFIER (%d)", node->line);
+        printf("MODIFIER \033[32m(%d)\033[0m", node->line);
         break;
     // variable
     case VAR:
-        printf("VARIABLE (%d)", node->line);
+        printf("VARIABLE \033[32m(%d)\033[0m", node->line);
         break;
     case VAR_ARRAY:
-        printf("VARIABLE ARRAY (%d)", node->line);
+        printf("VARIABLE ARRAY \033[32m(%d)\033[0m", node->line);
         break;
     case VAR_POINTER:
-        printf("VARIABLE POINTER (%d)", node->line);
+        printf("VARIABLE POINTER \033[32m(%d)\033[0m", node->line);
         break;
     case VAR_POINTER_ARRAY:
-        printf("VARIABLE POINTER ARRAY (%d)", node->line);
+        printf("VARIABLE POINTER ARRAY \033[32m(%d)\033[0m", node->line);
         break;
     case VAR_ARRAY_POINTER:
-        printf("VARIABLE ARRAY POINTER (%d)", node->line);
+        printf("VARIABLE ARRAY POINTER \033[32m(%d)\033[0m", node->line);
         break;
 
     // dimension
     case ARRAY_DIM:
-        printf("ARRAY DIMENSION (%d)", node->line);
+        printf("ARRAY DIMENSION \033[32m(%d)\033[0m", node->line);
         break;
-    
+
     // stars
     case STAR:
-        printf("STAR: %s (%d)", node->val, node->line);
+        printf("STAR: %s \033[32m(%d)\033[0m", node->val, node->line);
         break;
 
     // symbol (2 expression)
     case ASSIGN:
-        printf("ASSIGN (%d)", node->line);
+        printf("ASSIGN \033[32m(%d)\033[0m", node->line);
         break;
     case PLUS:
-        printf("PLUS (%d)", node->line);
+        printf("PLUS \033[32m(%d)\033[0m", node->line);
         break;
     case MINUS:
-        printf("MINUS (%d)", node->line);
+        printf("MINUS \033[32m(%d)\033[0m", node->line);
         break;
     case MULTIPLY:
-        printf("MULTIPLY (%d)", node->line);
+        printf("MULTIPLY \033[32m(%d)\033[0m", node->line);
         break;
     case DIV:
-        printf("DIVIDER (%d)", node->line);
+        printf("DIVIDER \033[32m(%d)\033[0m", node->line);
         break;
     case DELIVERY:
-        printf("DELIVERY (%d)", node->line);
+        printf("DELIVERY \033[32m(%d)\033[0m", node->line);
         break;
     case GREATER:
-        printf("GREATER (%d)", node->line);
+        printf("GREATER \033[32m(%d)\033[0m", node->line);
         break;
     case SMALLER:
-        printf("SMALLER (%d)", node->line);
+        printf("SMALLER \033[32m(%d)\033[0m", node->line);
         break;
     case GREATER_EQUAL:
-        printf("GREATER EQUAL (%d)", node->line);
+        printf("GREATER EQUAL \033[32m(%d)\033[0m", node->line);
         break;
     case SMALLER_EQUAL:
-        printf("SMALLER EQUAL (%d)", node->line);
+        printf("SMALLER EQUAL \033[32m(%d)\033[0m", node->line);
         break;
     case EQUAL:
-        printf("EQUAL (%d)", node->line);
+        printf("EQUAL \033[32m(%d)\033[0m", node->line);
         break;
     case NOT_EQUAL:
-        printf("NOT EQUAL (%d)", node->line);
+        printf("NOT EQUAL \033[32m(%d)\033[0m", node->line);
         break;
     case AND:
-        printf("AND (%d)", node->line);
+        printf("AND \033[32m(%d)\033[0m", node->line);
         break;
     case OR:
-        printf("OR (%d)", node->line);
+        printf("OR \033[32m(%d)\033[0m", node->line);
         break;
     // symbol (1 expression)
     case FDPLUS:
-        printf("FDPLUS (%d)", node->line);
+        printf("FDPLUS \033[32m(%d)\033[0m", node->line);
         break;
     case BDPLUS:
-        printf("BPLUS (%d)", node->line);
+        printf("BPLUS \033[32m(%d)\033[0m", node->line);
         break;
     case FDMINUS:
-        printf("FMINUS (%d)", node->line);
+        printf("FMINUS \033[32m(%d)\033[0m", node->line);
         break;
     case BDMINUS:
-        printf("BMINUS (%d)", node->line);
+        printf("BMINUS \033[32m(%d)\033[0m", node->line);
         break;
     case NOT:
-        printf("NOT (%d)", node->line);
+        printf("NOT \033[32m(%d)\033[0m", node->line);
         break;
     case DOT:
-        printf("DOT (%d)", node->line);
+        printf("DOT \033[32m(%d)\033[0m", node->line);
         break;
     case POINTER:
-        printf("POINTER (%d)", node->line);
+        printf("POINTER \033[32m(%d)\033[0m", node->line);
         break;
     case ARG:
-        printf("ARGUMENT (%d)", node->line);
+        printf("ARGUMENT \033[32m(%d)\033[0m", node->line);
         break;
     case FUNC_CALL:
-        printf("FUNCTION CALL (%d)", node->line);
+        printf("FUNCTION CALL \033[32m(%d)\033[0m", node->line);
         break;
     case GET_ADDR:
-        printf("GET ADDR (%d)", node->line);
+        printf("GET ADDR \033[32m(%d)\033[0m", node->line);
         break;
     case GET_DATA:
-        printf("GET DATA (%d)", node->line);
+        printf("GET DATA \033[32m(%d)\033[0m", node->line);
         break;
 
     // if else if else
     case IF:
-        printf("IF (%d)", node->line);
+        printf("IF \033[32m(%d)\033[0m", node->line);
         break;
     case ELSE:
-        printf("ELSE (%d)", node->line);
+        printf("ELSE \033[32m(%d)\033[0m", node->line);
         break;
 
     // while
     case WHILE:
-        printf("WHILE (%d)", node->line);
+        printf("WHILE \033[32m(%d)\033[0m", node->line);
         break;
     case FOR:
-        printf("FOR (%d)", node->line);
+        printf("FOR \033[32m(%d)\033[0m", node->line);
         break;
     case FOR_START_STMT:
-        printf("FOR START STATMENT (%d)", node->line);
+        printf("FOR START STATMENT \033[32m(%d)\033[0m", node->line);
         break;
     case FOR_COND_STMT:
-        printf("FOR CONDITION STATMENT (%d)", node->line);
+        printf("FOR CONDITION STATMENT \033[32m(%d)\033[0m", node->line);
         break;
     case FOR_ITER_EXP:
-        printf("FOR ITERATIVE EXPRESSION (%d)", node->line);
+        printf("FOR ITERATIVE EXPRESSION \033[32m(%d)\033[0m", node->line);
         break;
 
     // return
     case RETURN:
-        printf("RETURN (%d)", node->line);
+        printf("RETURN \033[32m(%d)\033[0m", node->line);
         break;
 
     default:

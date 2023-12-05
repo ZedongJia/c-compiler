@@ -102,11 +102,11 @@
      VAR_DEC = 318,
      ARG_DEC = 319,
      INITIALIZER_LIST = 320,
-     ARRAY_DEC = 321,
-     VAR_DEF = 322,
-     STRUCT_DEF_STMT = 323,
-     STRUCT_DEF = 324,
-     MODIFIER = 325,
+     VAR_DEF = 321,
+     STRUCT_DEF_STMT = 322,
+     STRUCT_DEF = 323,
+     MODIFIER = 324,
+     SPECIFIER = 325,
      VAR = 326,
      VAR_ARRAY = 327,
      VAR_POINTER = 328,
@@ -115,23 +115,22 @@
      ARRAY_DIM = 331,
      VAR_DEC_STMT = 332,
      VAR_DEF_STMT = 333,
-     ARRAY_DEC_STMT = 334,
-     FUNC_DEC_STMT = 335,
-     FUNC_DEF_STMT = 336,
-     FUNC_CALL = 337,
-     STMTS = 338,
-     STMT = 339,
-     GET_ADDR = 340,
-     GET_DATA = 341,
-     RETURN = 342,
-     ARG = 343,
-     IF = 344,
-     ELSE = 345,
-     WHILE = 346,
-     FOR = 347,
-     FOR_START_STMT = 348,
-     FOR_COND_STMT = 349,
-     FOR_ITER_EXP = 350
+     FUNC_DEC_STMT = 334,
+     FUNC_DEF_STMT = 335,
+     FUNC_CALL = 336,
+     STMTS = 337,
+     STMT = 338,
+     GET_ADDR = 339,
+     GET_DATA = 340,
+     RETURN = 341,
+     ARG = 342,
+     IF = 343,
+     ELSE = 344,
+     WHILE = 345,
+     FOR = 346,
+     FOR_START_STMT = 347,
+     FOR_COND_STMT = 348,
+     FOR_ITER_EXP = 349
    };
 #endif
 
@@ -149,7 +148,7 @@ typedef union YYSTYPE
 
 
 /* Line 1676 of yacc.c  */
-#line 153 "include/parser.h"
+#line 152 "include/parser.h"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
