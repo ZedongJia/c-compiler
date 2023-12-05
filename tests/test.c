@@ -15,6 +15,8 @@ int enter(int a, int b)
 
 extern int leave(int a, const int b)
 {
+    int arr[4], abb[5], a;
+    int abbbb[5][6][9], bba[5] = {1,2,3,4,5};
     int c = {a + b, 6}, d = 5;
     leave(a, b);
     // ; end
@@ -48,7 +50,6 @@ extern int leave(int a, const int b)
     {
         d = 9;
     }
-
     if (a == 5)
         if (c == 9)
             c = 6;
@@ -68,8 +69,19 @@ extern int leave(int a, const int b)
     for (int j = 0; j < 5; j ++) {
         a = j;
     }
+    int i;
     for (;;);
     for (;i < 5;i++);
     for (;i<5;);
+
+
+    int *test;
+    int **testt;
+    char (*tt)[10];
+    float (*ttt[10]);
+    int *ct[10];
+
+    testt = *ct;
+    a = &ct;
     return 0;
 }

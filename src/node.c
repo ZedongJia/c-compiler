@@ -124,7 +124,6 @@ void appendNodes(Node *node, Node *__extern)
     // allocate new
     Node **children = (Node **)malloc(sizeof(Node *) * (node->numOfChildren + __extern->numOfChildren));
 
-
     // assign
     for (int i = 0; i < node->numOfChildren; i++)
         children[__extern->numOfChildren] = node->children[i];
@@ -132,7 +131,7 @@ void appendNodes(Node *node, Node *__extern)
     // append
     for (int i = 0; i < __extern->numOfChildren; i++)
         children[node->numOfChildren + i] = __extern->children[i];
-    
+
     // free old
     free(node->children);
     free(__extern->children);
@@ -258,7 +257,7 @@ void printNode(Node *node, int depth)
     case VAR_DEC:
         printf("VARIABLE DECLARATION (%d)", node->line);
         break;
-    case ARG_DEC: 
+    case ARG_DEC:
         printf("ARGUMENT DECLARATION (%d)", node->line);
         break;
 
@@ -272,6 +271,32 @@ void printNode(Node *node, int depth)
 
     case MODIFIER:
         printf("MODIFIER (%d)", node->line);
+        break;
+    // variable
+    case VAR:
+        printf("VARIABLE (%d)", node->line);
+        break;
+    case VAR_ARRAY:
+        printf("VARIABLE ARRAY (%d)", node->line);
+        break;
+    case VAR_POINTER:
+        printf("VARIABLE POINTER (%d)", node->line);
+        break;
+    case VAR_POINTER_ARRAY:
+        printf("VARIABLE POINTER ARRAY (%d)", node->line);
+        break;
+    case VAR_ARRAY_POINTER:
+        printf("VARIABLE ARRAY POINTER (%d)", node->line);
+        break;
+
+    // dimension
+    case ARRAY_DIM:
+        printf("ARRAY DIMENSION (%d)", node->line);
+        break;
+    
+    // stars
+    case STAR:
+        printf("STAR: %s (%d)", node->val, node->line);
         break;
 
     // symbol (2 expression)
@@ -345,6 +370,12 @@ void printNode(Node *node, int depth)
     case FUNC_CALL:
         printf("FUNCTION CALL (%d)", node->line);
         break;
+    case GET_ADDR:
+        printf("GET ADDR (%d)", node->line);
+        break;
+    case GET_DATA:
+        printf("GET DATA (%d)", node->line);
+        break;
 
     // if else if else
     case IF:
@@ -353,7 +384,7 @@ void printNode(Node *node, int depth)
     case ELSE:
         printf("ELSE (%d)", node->line);
         break;
-    
+
     // while
     case WHILE:
         printf("WHILE (%d)", node->line);

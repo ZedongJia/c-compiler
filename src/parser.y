@@ -2,6 +2,7 @@
 %locations
 %{
     #include "stdio.h"
+    #include "stdlib.h"
     #include "math.h"
     #include "string.h"
     #include "ext.h"
@@ -15,10 +16,12 @@
 %type <node> Program
 %type <node> GlobalStmts LocalStmts GlobalStmt LocalStmt Stmt
 %type <node> VarDefStmt FuncDefStmt
-%type <node> VarDecStmt FuncDecStmt ArrayDecStmt
+%type <node> VarDecStmt FuncDecStmt
 %type <node> VarDef
-%type <node> VarDec ArrayDec ArgDecs ArgDec
-%type <node> ArrayDim
+%type <node> VarDec ArgDecs ArgDec
+%type <node> Var
+%type <node> Stars
+%type <node> ArrayDims ArrayDim
 %type <node> Initializer InitializerList BraceInitializer
 %type <node> Args
 %type <node> Exp
@@ -33,6 +36,7 @@
 /* symbol */
 %token <node> GREATER SMALLER GREATER_EQUAL SMALLER_EQUAL EQUAL NOT_EQUAL AND OR NOT
 %token <node> ASSIGN
+%token <node> SAND
 %token <node> PLUS MINUS DPLUS FDPLUS BDPLUS DMINUS FDMINUS BDMINUS MULTIPLY DIV DELIVERY
 %token <node> SEMI COMMA LP RP LC RC LB RB
 %token <node> DOT POINTER STAR
@@ -53,6 +57,8 @@
 %token VAR_DEF STRUCT_DEF_STMT STRUCT_DEF
 /* modifier */
 %token MODIFIER
+/* var */
+%token VAR VAR_ARRAY VAR_POINTER VAR_ARRAY_POINTER VAR_POINTER_ARRAY
 /* array */
 %token ARRAY_DIM
 /* statment, statments */
@@ -60,6 +66,9 @@
 %token ARRAY_DEC_STMT
 %token FUNC_DEC_STMT FUNC_DEF_STMT FUNC_CALL
 %token STMTS STMT
+
+/* exp */
+%token GET_ADDR GET_DATA
 
 /* return */
 %token RETURN
@@ -77,7 +86,7 @@
 %left STAR DIV
 %left LP RP LC RC
 %left DOT POINTER
-%right NOT DPLUS DMINUS
+%right NOT DPLUS DMINUS SAND
 
 /* no priority */
 %nonassoc KW_ELSE
@@ -153,10 +162,10 @@ VarDecStmt  : Modifier TypeSpecifier VarDec SEMI {
             }
             ;
 
-VarDec  : ID {
+VarDec  : Var {
             $$ = createNode(VAR_DEC, NULL, $1->line, level, 1, $1);
         }
-        | ID COMMA VarDec {
+        | Var COMMA VarDec {
             $$ = createNode(VAR_DEC, NULL, $1->line, level, 2, $1, $3);
         }
         ;
@@ -177,20 +186,10 @@ ArgDecs : ArgDec {
         }
         ;
 
-ArgDec  : Modifier TypeSpecifier ID {
+ArgDec  : Modifier TypeSpecifier Var {
             $$ = createNode(ARG_DEC, NULL, $1->line, level, 3, $1, $2, $3);
         }
         ;
-
-
-ArrayDecStmt    : Modifier TypeSpecifier ArrayDec SEMI {
-                    $$ = createNode(VAR_DEC_STMT, NULL, $1->line, level, 3, $1, $2, $3);
-                }
-                ;
-
-ArrayDec    : {}
-            | {}
-            ;
 
 /* defination */
 
@@ -199,27 +198,27 @@ VarDefStmt  : Modifier TypeSpecifier VarDef SEMI {
             }
             ;
 
-VarDef  : ID ASSIGN Initializer {
+VarDef  : Var ASSIGN Initializer {
             $$ = createNode(VAR_DEF, NULL, $1->line, level, 2, $1, $3);
         }
-        | ID ASSIGN BraceInitializer {
+        | Var ASSIGN BraceInitializer {
             $$ = createNode(VAR_DEF, NULL, $1->line, level, 2, $1, $3);
         }
-        | ID ASSIGN BraceInitializer COMMA ID {
+        | Var ASSIGN BraceInitializer COMMA ID {
             Node *node = createNode(VAR_DEF, NULL, $5->line, level, 1, $5);
             $$ = createNode(VAR_DEF, NULL, $1->line, level, 3, $1, $3, node);
         }
-        | ID ASSIGN Initializer COMMA ID {
+        | Var ASSIGN Initializer COMMA ID {
             Node *node = createNode(VAR_DEF, NULL, $5->line, level, 1, $5);
             $$ = createNode(VAR_DEF, NULL, $1->line, level, 3, $1, $3, node);
         }
-        | ID COMMA VarDef {
+        | Var COMMA VarDef {
             $$ = createNode(VAR_DEF, NULL, $1->line, level, 2, $1, $3);
         }
-        | ID ASSIGN Initializer COMMA VarDef {
+        | Var ASSIGN Initializer COMMA VarDef {
             $$ = createNode(VAR_DEF, NULL, $1->line, level, 3, $1, $3, $5);
         }
-        | ID ASSIGN BraceInitializer COMMA VarDef {
+        | Var ASSIGN BraceInitializer COMMA VarDef {
             $$ = createNode(VAR_DEF, NULL, $1->line, level, 3, $1, $3, $5);
         }
         ;
@@ -238,6 +237,31 @@ FuncDefStmt : Modifier TypeSpecifier ID LP ArgDecs RP LC LocalStmts RC {
             }
             ;
 
+/* variable */
+Var : ID {
+        $$ = createNode(VAR, NULL, $1->line, level, 1, $1);
+    }
+    | ID ArrayDims {
+        $$ = createNode(VAR_ARRAY, NULL, $1->line, level, 2, $1, $2);
+    }
+    | Stars ID {
+        $$ = createNode(VAR_POINTER, NULL, $1->line, level, 2, $1, $2);
+    }
+    | LP Stars ID RP {
+        $$ = createNode(VAR_POINTER, NULL, $1->line, level, 2, $2, $3);
+    }
+    | LP Stars ID ArrayDims RP {
+        $$ = createNode(VAR_POINTER_ARRAY, NULL, $1->line, level, 3, $2, $3, $4);
+    }
+    | LP Stars ID RP ArrayDims {
+        $$ = createNode(VAR_ARRAY_POINTER, NULL, $1->line, level, 3, $2, $3, $5);
+    }
+    | Stars ID ArrayDims {
+        $$ = createNode(VAR_POINTER_ARRAY, NULL, $1->line, level, 3, $1, $2, $3);
+    }
+    ;
+
+
 /* modifier */
 Modifier    : {
                 $$ = createNode(MODIFIER, NULL, yylineno, level, 0)
@@ -251,8 +275,38 @@ Modifier    : {
             ;
 
 
+/* stars */
+Stars   : STAR {
+            $$ = createNode(STAR, "1", $1->line, level, 0);
+        }
+        | STAR Stars {
+            int num = atoi($2->val);
+            itoa(num + 1, $2->val, 10);
+            $2->line = $1->line;
+            $$ = $2;
+        }
+        ;
+
+
 /* array dimension */
-ArrayDim    : {}
+ArrayDims   : ArrayDim {
+                $$ = $1;
+            }
+            | ArrayDim ArrayDims {
+                appendNode($1, $2);
+                $$ = $1;
+            }
+            ;
+
+ArrayDim    : LB INT RB {
+                $$ = createNode(ARRAY_DIM, NULL, $1->line, level, 1, $2);
+            }
+            | LB ID RB {
+                $$ = createNode(ARRAY_DIM, NULL, $1->line, level, 1, $2);
+            }
+            | LB RB {
+                $$ = createNode(ARRAY_DIM, NULL, $1->line, level, 0);
+            }
             ;
 
 
@@ -421,6 +475,12 @@ Exp : Exp ASSIGN Exp {
     }
     | ID LP RP {
         $$ = createNode(FUNC_CALL, NULL, $1->line, level, 0);
+    }
+    | STAR ID {
+        $$ = createNode(GET_ADDR, NULL, $2->line, level, 1, $2);
+    }
+    | SAND ID {
+        $$ = createNode(GET_DATA, NULL, $2->line, level, 1, $2);
     }
     /* base type */
     | INT {

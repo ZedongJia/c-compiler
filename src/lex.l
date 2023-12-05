@@ -103,6 +103,7 @@ DBPS 		 \/\*(((\**[^\*\/]+\/*))*|([^*]*)*|([^\/]*)*)\*\/
 "++"		 {formatPrint(yylineno, "DPLUS", yytext);setToken(DPLUS, NULL);if (!DEBUG)return DPLUS;}
 "--"		 {formatPrint(yylineno, "DMINUS", yytext);setToken(DMINUS, NULL);if (!DEBUG)return DMINUS;}
 "*"			 {formatPrint(yylineno, "STAR", yytext);setToken(STAR, NULL);if (!DEBUG)return STAR;}
+"&"          {formatPrint(yylineno, "SAND", yytext);setToken(SAND, NULL);if (!DEBUG)return SAND;}
 "/"			 {formatPrint(yylineno, "DIV", yytext);setToken(DIV, NULL);if (!DEBUG)return DIV;}
 "&&"         {formatPrint(yylineno, "AND", yytext);setToken(AND, NULL);if (!DEBUG)return AND;}
 "||"         {formatPrint(yylineno, "OR", yytext);setToken(OR, NULL);if (!DEBUG)return OR;}
