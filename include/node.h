@@ -28,4 +28,7 @@ void appendNodes(Node *node, Node *__extern);
 void printNode(Node *node, int depth);
 void deleteNode(Node *node);
 
+
+void addType(Node *node, Node *specifier);
+void syntaxAnalysis(Node *node, char *namespace, int syntaxType);
 #endif

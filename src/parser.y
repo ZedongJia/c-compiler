@@ -51,9 +51,9 @@
 /* pretreatment */
 %token PRE_INCLUDE PRE_DEFINE
 /* declare (can be many) */
-%token VAR_DEC ARG_DEC INITIALIZER_LIST
+%token VAR_DEC ARG_DEC INITIALIZER BRACE_INITIALIZER FUNC_DEC
 /* define (only once) */
-%token VAR_DEF STRUCT_DEF_STMT STRUCT_DEF
+%token VAR_DEF STRUCT_DEF FUNC_DEF
 /* modifier */
 %token MODIFIER SPECIFIER
 /* var */
@@ -61,8 +61,7 @@
 /* array */
 %token ARRAY_DIM
 /* statment, statments */
-%token VAR_DEC_STMT VAR_DEF_STMT
-%token FUNC_DEC_STMT FUNC_DEF_STMT FUNC_CALL
+%token FUNC_CALL
 %token STMTS STMT
 
 /* exp */
@@ -97,8 +96,17 @@ Program : GlobalStmts {
         }
         ;
 
+/*
+    statments level -> control the variable defination and declare
+
+*/
+
 GlobalStmts : GlobalStmt {
-                $$ = createNode(STMTS, NULL, $1->line, level, 1, $1);
+                if ($1 != NULL) {
+                    $$ = createNode(STMTS, NULL, $1->line, level, 1, $1);
+                } else {
+                    $$ = createNode(STMTS, NULL, yylineno, level, 0);
+                }
             }
             | GlobalStmt GlobalStmts {
                 if ($1 != NULL) {
@@ -124,7 +132,7 @@ GlobalStmt  : VarDefStmt {
                 $$ = $1;
             }
             | SEMI {
-                $$ = createNode(STMT, NULL, $1->line, level, 0);
+                $$ = NULL;
             }
             | error SEMI {
                 $$ = NULL;
@@ -132,7 +140,11 @@ GlobalStmt  : VarDefStmt {
             ;
 
 LocalStmts  : LocalStmt {
-                $$ = createNode(STMTS, NULL, $1->line, level, 1, $1);
+                if ($1 != NULL) {
+                    $$ = createNode(STMTS, NULL, $1->line, level, 1, $1);
+                } else {
+                    $$ = createNode(STMTS, NULL, yylineno, level, 0);
+                }
             }
             | LocalStmt LocalStmts {
                 if ($1 != NULL) {
@@ -141,6 +153,7 @@ LocalStmts  : LocalStmt {
                 $$ = $2;
             }
             ;
+
 LocalStmt   : VarDefStmt {
                 $$ = $1;
             }
@@ -151,7 +164,7 @@ LocalStmt   : VarDefStmt {
                 $$ = $1;
             }
             | SEMI {
-                $$ = createNode(STMT, NULL, $1->line, level, 0);
+                $$ = NULL;
             }
             | error SEMI {
                 $$ = NULL;
@@ -159,11 +172,15 @@ LocalStmt   : VarDefStmt {
             ;
 
 StructMemStmts  : StructMemStmt {
-                    $$ = createNode(STMTS, NULL, $1->line, level, 1, $1);
+                    if ($1 != NULL) {
+                        $$ = createNode(STMTS, NULL, $1->line, level, 1, $1);
+                    } else {
+                        $$ = createNode(STMTS, NULL, yylineno, level, 0);
+                    }
                 }
                 | StructMemStmt StructMemStmts {
                     if ($1 != NULL) {
-                    prependNode($2,$1);
+                        prependNode($2,$1);
                     }
                     $$ = $2;
                 }
@@ -176,7 +193,7 @@ StructMemStmt   : VarDefStmt {
                     $$ = $1;
                 }
                 | SEMI {
-                    $$ = createNode(STMT, NULL, $1->line, level, 0);
+                    $$ = NULL;
                 }
                 | error SEMI {
                     $$ = NULL;
@@ -186,7 +203,8 @@ StructMemStmt   : VarDefStmt {
 
 /* declare */
 VarDecStmt  : TypeSpecifier VarDec SEMI {
-                $$ = createNode(VAR_DEC_STMT, NULL, $1->line, level, 2, $1, $2);
+                addType($2, $1);
+                $$ =$2;
             }
             ;
 
@@ -199,10 +217,10 @@ VarDec  : Var {
         ;
 
 FuncDecStmt : TypeSpecifier ID LP ArgDecs RP SEMI {
-                $$ = createNode(FUNC_DEC_STMT, NULL, $1->line, level, 3, $1, $2, $4);
+                $$ = createNode(FUNC_DEC, NULL, $1->line, level, 3, $1, $2, $4);
             }
             | TypeSpecifier ID LP RP SEMI {
-                $$ = createNode(FUNC_DEC_STMT, NULL, $1->line, level, 2, $1, $2);
+                $$ = createNode(FUNC_DEC, NULL, $1->line, level, 2, $1, $2);
             }
             ;
 
@@ -210,69 +228,82 @@ ArgDecs : ArgDec {
             $$ = $1;
         }
         | ArgDec COMMA ArgDecs {
-            $$ = createNode(ARG_DEC, NULL, $1->line, level, 2, $1, $3);
+            appendNode($1, $3);
+            $$ = $1;
         }
         ;
 
 ArgDec  : TypeSpecifier Var {
-            $$ = createNode(ARG_DEC, NULL, $1->line, level, 2, $1, $2);
+            addType($2, $1);
+            $$ = createNode(ARG_DEC, NULL, $1->line, level, 1, $2);
         }
         ;
 
 /* defination */
 
 VarDefStmt  : TypeSpecifier VarDef SEMI {
-                $$ = createNode(VAR_DEF_STMT, NULL, $1->line, level, 2, $1, $2);
+                addType($2, $1);
+                $$ = $2;
             }
             ;
 
 VarDef  : Var ASSIGN Initializer {
-            $$ = createNode(VAR_DEF, NULL, $1->line, level, 2, $1, $3);
+            appendNode($1, $3);
+            $$ = createNode(VAR_DEF, NULL, $1->line, level, 1, $1);
         }
         | Var ASSIGN BraceInitializer {
-            $$ = createNode(VAR_DEF, NULL, $1->line, level, 2, $1, $3);
+            appendNode($1, $3);
+            $$ = createNode(VAR_DEF, NULL, $1->line, level, 1, $1);
         }
-        | Var ASSIGN BraceInitializer COMMA ID {
-            Node *node = createNode(VAR_DEF, NULL, $5->line, level, 1, $5);
-            $$ = createNode(VAR_DEF, NULL, $1->line, level, 3, $1, $3, node);
+        | Var ASSIGN BraceInitializer COMMA Var {
+            Node *node = createNode(VAR, NULL, $5->line, level, 1, $5);
+            appendNode($1, $3);
+            $$ = createNode(VAR_DEF, NULL, $1->line, level, 2, $1, node);
         }
-        | Var ASSIGN Initializer COMMA ID {
-            Node *node = createNode(VAR_DEF, NULL, $5->line, level, 1, $5);
-            $$ = createNode(VAR_DEF, NULL, $1->line, level, 3, $1, $3, node);
+        | Var ASSIGN Initializer COMMA Var {
+            appendNode($1, $3);
+            Node *node = createNode(VAR, NULL, $5->line, level, 1, $5);
+            $$ = createNode(VAR_DEF, NULL, $1->line, level, 2, $1, node);
         }
         | Var COMMA VarDef {
             $$ = createNode(VAR_DEF, NULL, $1->line, level, 2, $1, $3);
         }
         | Var ASSIGN Initializer COMMA VarDef {
-            $$ = createNode(VAR_DEF, NULL, $1->line, level, 3, $1, $3, $5);
+            appendNode($1, $3);
+            $$ = createNode(VAR_DEF, NULL, $1->line, level, 2, $1, $5);
         }
         | Var ASSIGN BraceInitializer COMMA VarDef {
-            $$ = createNode(VAR_DEF, NULL, $1->line, level, 3, $1, $3, $5);
+            appendNode($1, $3);
+            $$ = createNode(VAR_DEF, NULL, $1->line, level, 2, $1, $5);
         }
         ;
 
 FuncDefStmt : TypeSpecifier ID LP ArgDecs RP LC LocalStmts RC {
-                $$ = createNode(FUNC_DEF_STMT, NULL, $1->line, level, 4, $1, $2, $4, $7);
+                $$ = createNode(FUNC_DEF, NULL, $1->line, level, 4, $1, $2, $4, $7);
             }
             | TypeSpecifier ID LP RP LC LocalStmts RC {
-                $$ = createNode(FUNC_DEF_STMT, NULL, $1->line, level, 3, $1, $2, $6);
+                $$ = createNode(FUNC_DEF, NULL, $1->line, level, 3, $1, $2, $6);
             }
             | TypeSpecifier ID LP ArgDecs RP LC RC {
-                $$ = createNode(FUNC_DEF_STMT, NULL, $1->line, level, 3, $1, $2, $4);
+                $$ = createNode(FUNC_DEF, NULL, $1->line, level, 3, $1, $2, $4);
             }
             | TypeSpecifier ID LP RP LC RC {
-                $$ = createNode(FUNC_DEF_STMT, NULL, $1->line, level, 2, $1, $2);
+                $$ = createNode(FUNC_DEF, NULL, $1->line, level, 2, $1, $2);
             }
             ;
 
 StructDefStmt   : StructDef SEMI {
-                    $$ = createNode(STRUCT_DEF_STMT, NULL, $1->line, level, 1, $1);
+                    $$ = $1;
                 }
                 | StructDef VarDef SEMI {
-                    $$ = createNode(STRUCT_DEF_STMT, NULL, $1->line, level, 2, $1, $2);
+                    addType($2, $1->children[0]);
+                    appendNode($1, $2);
+                    $$ = $1;
                 }
                 | StructDef VarDec SEMI {
-                    $$ = createNode(STRUCT_DEF_STMT, NULL, $1->line, level, 2, $1, $2);
+                    addType($2, $1->children[0]);
+                    appendNode($1, $2);
+                    $$ = $1;
                 }
                 ;
 
@@ -345,19 +376,19 @@ ArrayDim    : LB INT RB {
 
 /* initializer */
 Initializer : INT {
-                $$ = createNode(INITIALIZER_LIST, NULL, $1->line, level, 1, $1);
+                $$ = createNode(INITIALIZER, NULL, $1->line, level, 1, $1);
             }
             | FLOAT {
-                $$ = createNode(INITIALIZER_LIST, NULL, $1->line, level, 1, $1);
+                $$ = createNode(INITIALIZER, NULL, $1->line, level, 1, $1);
             }
             | CHAR {
-                $$ = createNode(INITIALIZER_LIST, NULL, $1->line, level, 1, $1);
+                $$ = createNode(INITIALIZER, NULL, $1->line, level, 1, $1);
             }
             | STRING {
-                $$ = createNode(INITIALIZER_LIST, NULL, $1->line, level, 1, $1);
+                $$ = createNode(INITIALIZER, NULL, $1->line, level, 1, $1);
             }
             | Exp {
-                $$ = createNode(INITIALIZER_LIST, NULL, $1->line, level, 1, $1);
+                $$ = createNode(INITIALIZER, NULL, $1->line, level, 1, $1);
             }
             ;
 
@@ -366,15 +397,15 @@ Initializer : INT {
     {}
  */
 BraceInitializer    : LC InitializerList RC {
-                        $$ = $2;
+                        $$ = createNode(BRACE_INITIALIZER, NULL, $1->line, level, 1, $2);
                     }
                     | LC RC {
-                        $$ = createNode(INITIALIZER_LIST, NULL, $1->line, level, 0);
+                        $$ = createNode(BRACE_INITIALIZER, NULL, $1->line, level, 0);
                     }
                     ;
 
 InitializerList : Initializer {
-                    $$ = $1
+                    $$ = $1;
                 }
                 | BraceInitializer {
                     $$ = $1;
@@ -422,7 +453,7 @@ Type    : KW_INT {
             $$ = $1;
         }
         | KW_STRUCT ID {
-            appendNode($1, $2);
+            $1->val = $2->val;
             $$ = $1;
         }
         ;
@@ -502,9 +533,11 @@ Exp : Exp ASSIGN Exp {
         $$ = createNode(OR, NULL, $1->line, level, 2, $1, $3);
     }
     | Exp DOT Exp {
+        // specific for ID
         $$ = createNode(DOT, NULL, $1->line, level, 2, $1, $3);
     }
     | Exp POINTER Exp {
+        // specific for ID
         $$ = createNode(POINTER, NULL, $1->line, level, 2, $1, $3);
     }
     /* unary operator */
@@ -534,7 +567,7 @@ Exp : Exp ASSIGN Exp {
         $$ = createNode(FUNC_CALL, NULL, $1->line, level, 2, $1, $3);
     }
     | ID LP RP {
-        $$ = createNode(FUNC_CALL, NULL, $1->line, level, 0);
+        $$ = createNode(FUNC_CALL, NULL, $1->line, level, 1, $1);
     }
     | STAR ID {
         $$ = createNode(GET_ADDR, NULL, $2->line, level, 1, $2);

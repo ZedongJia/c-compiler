@@ -112,3 +112,17 @@ struct test {
 struct a;
 ```
 ...
+
+
+### 未解决
+
+```
+
+int *parent() {
+    
+}
+
+int (*a())[10] {
+
+}
+```

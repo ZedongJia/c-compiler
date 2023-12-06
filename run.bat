@@ -31,7 +31,7 @@ if %1 equ clean (
     )
     flex -osrc/flex.c src/lex.l
     bison -d --defines=include/parser.h -o src/parser.c src/parser.y
-    gcc -fexec-charset=gbk -o bin/c src/main.c -I include src/flex.c src/node.c src/parser.c
+    gcc -fexec-charset=gbk -o bin/c src/main.c -I include src/flex.c src/node.c src/parser.c src/foutput.c src/symbolTable.c
 ) else if %1 equ test (
     cd bin
     c ..\tests\test.c

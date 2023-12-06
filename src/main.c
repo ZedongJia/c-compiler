@@ -1,7 +1,6 @@
 #include <ext.h>
 
-Node* astTree;
-
+Node *astTree;
 int main(int argc, char const *argv[])
 {
     yyin = fopen(argv[1], "r");
@@ -10,6 +9,9 @@ int main(int argc, char const *argv[])
     yylineno = 1;
     yyparse();
     printNode(astTree, 0);
+    // syntax analysis
+    syntaxAnalysis(astTree, "default", DECLARE);
+    printTable();
     deleteNode(astTree);
     return 0;
 }
