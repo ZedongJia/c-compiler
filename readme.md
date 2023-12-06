@@ -109,7 +109,7 @@ struct test {
     char b;
 };
 
-struct a;
+struct a; // not support
 ```
 ...
 

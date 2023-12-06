@@ -256,14 +256,14 @@ VarDef  : Var ASSIGN Initializer {
             $$ = createNode(VAR_DEF, NULL, $1->line, level, 1, $1);
         }
         | Var ASSIGN BraceInitializer COMMA Var {
-            Node *node = createNode(VAR, NULL, $5->line, level, 1, $5);
             appendNode($1, $3);
-            $$ = createNode(VAR_DEF, NULL, $1->line, level, 2, $1, node);
+            appendNode($1, $5);
+            $$ = createNode(VAR_DEF, NULL, $1->line, level, 1, $1);
         }
         | Var ASSIGN Initializer COMMA Var {
             appendNode($1, $3);
-            Node *node = createNode(VAR, NULL, $5->line, level, 1, $5);
-            $$ = createNode(VAR_DEF, NULL, $1->line, level, 2, $1, node);
+            appendNode($1, $5);
+            $$ = createNode(VAR_DEF, NULL, $1->line, level, 1, $1);
         }
         | Var COMMA VarDef {
             $$ = createNode(VAR_DEF, NULL, $1->line, level, 2, $1, $3);
@@ -670,7 +670,11 @@ ForIterExp      : Exp {
     -> align to STMS
  */
 StmtBlock   : LocalStmt {
-                $$ = createNode(STMTS, NULL, $1->line, level, 1, $1);
+                if ($1 != NULL) {
+                    $$ = createNode(STMTS, NULL, $1->line, level, 1, $1);
+                } else {
+                    $$ = createNode(STMTS, NULL, yylineno, level, 0);
+                }
             }
             | LC LocalStmts RC {
                 $$ = $2;

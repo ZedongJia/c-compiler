@@ -13,5 +13,6 @@ int main(int argc, char const *argv[])
     syntaxAnalysis(astTree, "default", DECLARE);
     printTable();
     deleteNode(astTree);
+    deleteTable();
     return 0;
 }

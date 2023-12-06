@@ -603,7 +603,7 @@ static const yytype_uint16 yyrline[] =
      514,   517,   520,   523,   526,   529,   532,   535,   539,   544,
      548,   551,   554,   557,   560,   563,   566,   569,   572,   575,
      579,   582,   585,   588,   591,   611,   614,   618,   624,   630,
-     633,   637,   640,   643,   647,   650,   655,   672,   675,   678
+     633,   637,   640,   643,   647,   650,   655,   672,   679,   682
 };
 #endif
 
@@ -2204,9 +2204,9 @@ yyreduce:
 /* Line 1455 of yacc.c  */
 #line 258 "src/parser.y"
     {
-            Node *node = createNode(VAR, NULL, (yyvsp[(5) - (5)].node)->line, level, 1, (yyvsp[(5) - (5)].node));
             appendNode((yyvsp[(1) - (5)].node), (yyvsp[(3) - (5)].node));
-            (yyval.node) = createNode(VAR_DEF, NULL, (yyvsp[(1) - (5)].node)->line, level, 2, (yyvsp[(1) - (5)].node), node);
+            appendNode((yyvsp[(1) - (5)].node), (yyvsp[(5) - (5)].node));
+            (yyval.node) = createNode(VAR_DEF, NULL, (yyvsp[(1) - (5)].node)->line, level, 1, (yyvsp[(1) - (5)].node));
         ;}
     break;
 
@@ -2216,8 +2216,8 @@ yyreduce:
 #line 263 "src/parser.y"
     {
             appendNode((yyvsp[(1) - (5)].node), (yyvsp[(3) - (5)].node));
-            Node *node = createNode(VAR, NULL, (yyvsp[(5) - (5)].node)->line, level, 1, (yyvsp[(5) - (5)].node));
-            (yyval.node) = createNode(VAR_DEF, NULL, (yyvsp[(1) - (5)].node)->line, level, 2, (yyvsp[(1) - (5)].node), node);
+            appendNode((yyvsp[(1) - (5)].node), (yyvsp[(5) - (5)].node));
+            (yyval.node) = createNode(VAR_DEF, NULL, (yyvsp[(1) - (5)].node)->line, level, 1, (yyvsp[(1) - (5)].node));
         ;}
     break;
 
@@ -3133,14 +3133,18 @@ yyreduce:
 /* Line 1455 of yacc.c  */
 #line 672 "src/parser.y"
     {
-                (yyval.node) = createNode(STMTS, NULL, (yyvsp[(1) - (1)].node)->line, level, 1, (yyvsp[(1) - (1)].node));
+                if ((yyvsp[(1) - (1)].node) != NULL) {
+                    (yyval.node) = createNode(STMTS, NULL, (yyvsp[(1) - (1)].node)->line, level, 1, (yyvsp[(1) - (1)].node));
+                } else {
+                    (yyval.node) = createNode(STMTS, NULL, yylineno, level, 0);
+                }
             ;}
     break;
 
   case 138:
 
 /* Line 1455 of yacc.c  */
-#line 675 "src/parser.y"
+#line 679 "src/parser.y"
     {
                 (yyval.node) = (yyvsp[(2) - (3)].node);
             ;}
@@ -3149,7 +3153,7 @@ yyreduce:
   case 139:
 
 /* Line 1455 of yacc.c  */
-#line 678 "src/parser.y"
+#line 682 "src/parser.y"
     {
                 (yyval.node) = createNode(STMTS, NULL, (yyvsp[(1) - (2)].node)->line, level, 0);
             ;}
@@ -3158,7 +3162,7 @@ yyreduce:
 
 
 /* Line 1455 of yacc.c  */
-#line 3162 "src/parser.c"
+#line 3166 "src/parser.c"
       default: break;
     }
   YY_SYMBOL_PRINT ("-> $$ =", yyr1[yyn], &yyval, &yyloc);
@@ -3377,7 +3381,7 @@ yyreturn:
 
 
 /* Line 1675 of yacc.c  */
-#line 682 "src/parser.y"
+#line 686 "src/parser.y"
 
 void yyerror(const char* fmt, ...)
 {
