@@ -8,11 +8,11 @@ int main(int argc, char const *argv[])
         return 1;
     yylineno = 1;
     yyparse();
-    printNode(astTree, 0);
+    printNode(astTree, 0, NULL);
     // syntax analysis
-    syntaxAnalysis(astTree, "default", DECLARE);
-    printTable();
+    // syntaxAnalysis(astTree, "default", DECLARE);
+    // printTable();
     deleteNode(astTree);
-    deleteTable();
+    // deleteTable();
     return 0;
 }

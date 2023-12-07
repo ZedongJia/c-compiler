@@ -2,7 +2,6 @@
 #define EXTERN
 
 #include <node.h>
-#include <symbolTable.h>
 
 extern int yylex(void);
 extern int yyparse(void);

@@ -11,6 +11,7 @@
 
 %union {
     struct Node* node;
+    char *string;
 }
 
 %type <node> Program
@@ -25,7 +26,8 @@
 %type <node> Initializer InitializerList BraceInitializer
 %type <node> Args
 %type <node> Exp
-%type <node> TypeSpecifier Type Modifier
+%type <node> TypeSpecifier 
+%type <string>Type Modifier
 %type <node> If Else While For ForStartStmt ForCondStmt ForIterExp StmtBlock
 
 /* key work */
@@ -57,7 +59,9 @@
 /* modifier */
 %token MODIFIER SPECIFIER
 /* var */
-%token VAR VAR_ARRAY VAR_POINTER VAR_ARRAY_POINTER VAR_POINTER_ARRAY
+%token VAR
+/* type, <key,val> */
+%token TYPE
 /* array */
 %token ARRAY_DIM
 /* statment, statments */
@@ -212,15 +216,18 @@ VarDec  : Var {
             $$ = createNode(VAR_DEC, NULL, $1->line, level, 1, $1);
         }
         | Var COMMA VarDec {
-            $$ = createNode(VAR_DEC, NULL, $1->line, level, 2, $1, $3);
+            appendNodes($1, $3);
+            $$ = createNode(VAR_DEC, NULL, $1->line, level, 1, $1);
         }
         ;
 
-FuncDecStmt : TypeSpecifier ID LP ArgDecs RP SEMI {
-                $$ = createNode(FUNC_DEC, NULL, $1->line, level, 3, $1, $2, $4);
+FuncDecStmt : TypeSpecifier Var LP ArgDecs RP SEMI {
+                addType($2, $1);
+                $$ = createNode(FUNC_DEC, NULL, $2->line, level, 2, $2, $4);
             }
-            | TypeSpecifier ID LP RP SEMI {
-                $$ = createNode(FUNC_DEC, NULL, $1->line, level, 2, $1, $2);
+            | TypeSpecifier Var LP RP SEMI {
+                addType($2, $1);
+                $$ = createNode(FUNC_DEC, NULL, $2->line, level, 1, $2);
             }
             ;
 
@@ -228,14 +235,14 @@ ArgDecs : ArgDec {
             $$ = $1;
         }
         | ArgDec COMMA ArgDecs {
-            appendNode($1, $3);
+            appendNodes($1, $3);
             $$ = $1;
         }
         ;
 
 ArgDec  : TypeSpecifier Var {
             addType($2, $1);
-            $$ = createNode(ARG_DEC, NULL, $1->line, level, 1, $2);
+            $$ = createNode(ARG_DEC, NULL, $2->line, level, 1, $2);
         }
         ;
 
@@ -248,94 +255,146 @@ VarDefStmt  : TypeSpecifier VarDef SEMI {
             ;
 
 VarDef  : Var ASSIGN Initializer {
-            appendNode($1, $3);
+            $1->initializer = $3;
             $$ = createNode(VAR_DEF, NULL, $1->line, level, 1, $1);
         }
         | Var ASSIGN BraceInitializer {
-            appendNode($1, $3);
+            $1->initializer = $3;
             $$ = createNode(VAR_DEF, NULL, $1->line, level, 1, $1);
         }
         | Var ASSIGN BraceInitializer COMMA Var {
-            appendNode($1, $3);
+            $1->initializer = $3;
             appendNode($1, $5);
             $$ = createNode(VAR_DEF, NULL, $1->line, level, 1, $1);
         }
         | Var ASSIGN Initializer COMMA Var {
-            appendNode($1, $3);
+            $1->initializer = $3;
             appendNode($1, $5);
             $$ = createNode(VAR_DEF, NULL, $1->line, level, 1, $1);
         }
         | Var COMMA VarDef {
-            $$ = createNode(VAR_DEF, NULL, $1->line, level, 2, $1, $3);
+            appendNodes($1, $3);
+            $$ = createNode(VAR_DEF, NULL, $1->line, level, 1, $1);
         }
         | Var ASSIGN Initializer COMMA VarDef {
-            appendNode($1, $3);
-            $$ = createNode(VAR_DEF, NULL, $1->line, level, 2, $1, $5);
+            $1->initializer = $3;
+            appendNodes($1, $5);
+            $$ = createNode(VAR_DEF, NULL, $1->line, level, 1, $1);
         }
         | Var ASSIGN BraceInitializer COMMA VarDef {
-            appendNode($1, $3);
-            $$ = createNode(VAR_DEF, NULL, $1->line, level, 2, $1, $5);
+            $1->initializer = $3;
+            appendNodes($1, $5);
+            $$ = createNode(VAR_DEF, NULL, $1->line, level, 1, $1);
         }
         ;
 
-FuncDefStmt : TypeSpecifier ID LP ArgDecs RP LC LocalStmts RC {
-                $$ = createNode(FUNC_DEF, NULL, $1->line, level, 4, $1, $2, $4, $7);
+FuncDefStmt : TypeSpecifier Var LP ArgDecs RP LC LocalStmts RC {
+                addType($2, $1);
+                $$ = createNode(FUNC_DEF, NULL, $2->line, level, 3, $2, $4, $7);
             }
-            | TypeSpecifier ID LP RP LC LocalStmts RC {
-                $$ = createNode(FUNC_DEF, NULL, $1->line, level, 3, $1, $2, $6);
+            | TypeSpecifier Var LP RP LC LocalStmts RC {
+                addType($2, $1);
+                $$ = createNode(FUNC_DEF, NULL, $2->line, level, 3, $2, $6);
             }
-            | TypeSpecifier ID LP ArgDecs RP LC RC {
-                $$ = createNode(FUNC_DEF, NULL, $1->line, level, 3, $1, $2, $4);
+            | TypeSpecifier Var LP ArgDecs RP LC RC {
+                addType($2, $1);
+                $$ = createNode(FUNC_DEF, NULL, $2->line, level, 3, $2, $4);
             }
-            | TypeSpecifier ID LP RP LC RC {
-                $$ = createNode(FUNC_DEF, NULL, $1->line, level, 2, $1, $2);
+            | TypeSpecifier Var LP RP LC RC {
+                addType($2, $1);
+                $$ = createNode(FUNC_DEF, NULL, $2->line, level, 1, $2);
             }
             ;
 
 StructDefStmt   : StructDef SEMI {
+                    removeNode($1, 0);
                     $$ = $1;
                 }
                 | StructDef VarDef SEMI {
                     addType($2, $1->children[0]);
+                    removeNode($1, 0);
                     appendNode($1, $2);
                     $$ = $1;
                 }
                 | StructDef VarDec SEMI {
                     addType($2, $1->children[0]);
+                    removeNode($1, 0);
                     appendNode($1, $2);
                     $$ = $1;
                 }
                 ;
 
-StructDef   : TypeSpecifier LC StructMemStmts RC {
-                $$ = createNode(STRUCT_DEF, NULL, $1->line, level, 2, $1, $3);
+StructDef   : KW_STRUCT ID LC StructMemStmts RC {
+
+                char *type = (char*)malloc(sizeof(char)*strlen($2->val) + sizeof(char) * 7);
+                strcpy(type, "struct_");
+                strcat(type, $2->val);
+
+                Node *specifier = createNode(SPECIFIER, NULL, $1->line, level, 0);
+                specifier->valType = type;
+                specifier->valModifier = "default";
+
+                $$ = createNode(STRUCT_DEF, NULL, $1->line, level, 2, specifier, $4);
+                $$->lexeme = $2->val;
             }
-            | TypeSpecifier LC RC {
-                $$ = createNode(STRUCT_DEF, NULL, $1->line, level, 1, $1);
+            | KW_STRUCT ID LC RC {
+                char *type = (char*)malloc(sizeof(char)*strlen($2->val) + sizeof(char) * 7);
+                strcpy(type, "struct_");
+                strcat(type, $2->val);
+
+                Node *specifier = createNode(SPECIFIER, NULL, $1->line, level, 0);
+                specifier->valType = type;
+                specifier->valModifier = "default";
+
+                $$ = createNode(STRUCT_DEF, NULL, $1->line, level, 1, specifier);
+                $$->lexeme = $2->val;
             }
             ;
 
 /* variable */
 Var : ID {
-        $$ = createNode(VAR, NULL, $1->line, level, 1, $1);
+        $$ = createNode(VAR, NULL, $1->line, level, 0);
+        $$->valType = "_var";
+        $$->lexeme = $1->val;
     }
     | ID ArrayDims {
-        $$ = createNode(VAR_ARRAY, NULL, $1->line, level, 2, $1, $2);
+        $$ = createNode(VAR, NULL, $1->line, level, 0);
+        $$->valType = "_arr";
+        $$->lexeme = $1->val;
+        $$->arrayDim = $2;
     }
     | Stars ID {
-        $$ = createNode(VAR_POINTER, NULL, $1->line, level, 2, $1, $2);
+        $$ = createNode(VAR, NULL, $1->line, level, 0);
+        $$->valType = "_ptr";
+        $$->lexeme = $2->val;
+        $$->ptrStar = atoi($1->val);
     }
     | LP Stars ID RP {
-        $$ = createNode(VAR_POINTER, NULL, $1->line, level, 2, $2, $3);
+        $$ = createNode(VAR, NULL, $1->line, level, 0);
+        $$->valType = "_ptr";
+        $$->lexeme = $3->val;
+        $$->ptrStar = atoi($2->val);
     }
     | LP Stars ID ArrayDims RP {
-        $$ = createNode(VAR_POINTER_ARRAY, NULL, $1->line, level, 3, $2, $3, $4);
+        $$ = createNode(VAR, NULL, $1->line, level, 0);
+        $$->valType = "_ptr_arr";
+        $$->lexeme = $3->val;
+        $$->ptrStar = atoi($2->val);
+        $$->arrayDim = $4;
     }
     | LP Stars ID RP ArrayDims {
-        $$ = createNode(VAR_ARRAY_POINTER, NULL, $1->line, level, 3, $2, $3, $5);
+        $$ = createNode(VAR, NULL, $1->line, level, 0);
+        $$->valType = "_arr_ptr";
+        $$->lexeme = $3->val;
+        $$->ptrStar = atoi($2->val);
+        $$->arrayDim = $5;
     }
     | Stars ID ArrayDims {
-        $$ = createNode(VAR_POINTER_ARRAY, NULL, $1->line, level, 3, $1, $2, $3);
+        $$ = createNode(VAR, NULL, $1->line, level, 0);
+        $$->valType = "_ptr_arr";
+        $$->lexeme = $2->val;
+        $$->ptrStar = atoi($1->val);
+        $$->arrayDim = $3;
     }
     ;
 
@@ -421,40 +480,46 @@ InitializerList : Initializer {
                 ;
 /* type specifier */
 Modifier    : {
-                $$ = createNode(MODIFIER, NULL, yylineno, level, 0)
+                $$ = "default";
             }
             | KW_EXTERN {
-                $$ = createNode(MODIFIER, NULL, $1->line, level, 1, $1);
+                $$ = "extern";
             }
             | KW_CONST {
-                $$ = createNode(MODIFIER, NULL, $1->line, level, 1, $1);
+                $$ = "const";
             }
             ;
 
 
 TypeSpecifier   : Modifier Type {
-                    $$ = createNode(SPECIFIER, NULL, $1->line, level, 2, $1, $2);
+                    $$ = createNode(SPECIFIER, NULL, -1, -1, 0);
+                    $$->valType = $2;
+                    $$->valModifier = $1;
                 }
                 | Type Modifier {
-                    $$ = createNode(SPECIFIER, NULL, $1->line, level, 2, $2, $1);
+                    $$ = createNode(SPECIFIER, NULL, -1, -1, 0);
+                    $$->valType = $1;
+                    $$->valModifier = $2;
                 }
                 ;
 
 Type    : KW_INT {
-            $$ = $1;
+            $$ = "int";
         }
         | KW_FLOAT {
-            $$ = $1;
+            $$ = "float";
         }
         | KW_CHAR {
-            $$ = $1;
+            $$ = "char";
         }
         | KW_VOID {
-            $$ = $1;
+            $$ = "void";
         }
         | KW_STRUCT ID {
-            $1->val = $2->val;
-            $$ = $1;
+            char *type = (char*)malloc(sizeof(char)*strlen($2->val) + sizeof(char) * 7);
+            strcpy(type, "struct_");
+            strcat(type, $2->val);
+            $$ = type;
         }
         ;
 

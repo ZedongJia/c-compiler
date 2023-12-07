@@ -9,6 +9,15 @@ Node *createNode(int type, char *val, int line, int level, int numOfChildren, ..
     // set node type
     node->type = type;
 
+    // set lexeme
+    node->lexeme = NULL;
+
+    // set modifier
+    node->valModifier = NULL;
+
+    // set valType
+    node->valType = NULL;
+
     // set node val
     if (val != NULL)
     {
@@ -20,14 +29,23 @@ Node *createNode(int type, char *val, int line, int level, int numOfChildren, ..
         node->val = NULL;
     }
 
+    // set ptrStar
+    node->ptrStar = 0;
+
+    // set initializer
+    node->initializer = NULL;
+
+    // set dim
+    node->arrayDim = NULL;
+
     // set line
     node->line = line;
 
     node->level = level;
 
     // set default
-    node->code = NULL;
     node->parent = NULL;
+    node->width = 0;
 
     // set children
     node->numOfChildren = numOfChildren;
@@ -139,8 +157,8 @@ void appendNodes(Node *node, Node *__extern)
     // assign
     for (int i = 0; i < node->numOfChildren; i++)
     {
-        children[__extern->numOfChildren] = node->children[i];
-        children[__extern->numOfChildren]->parent = node;
+        children[i] = node->children[i];
+        children[i]->parent = node;
     }
 
     // append
@@ -160,7 +178,17 @@ void appendNodes(Node *node, Node *__extern)
     node->numOfChildren += __extern->numOfChildren;
 }
 
-void printNode(Node *node, int depth)
+void removeNode(Node *node, int pos)
+{
+    if (pos == -1)
+        return;
+    free(node->children[pos]);
+    for (int i = pos; i < node->numOfChildren - 1; i++)
+        node->children[i] = node->children[i + 1];
+    node->numOfChildren--;
+}
+
+void __printPrefix(char *prefix, int depth)
 {
     for (int i = 0; i <= depth - 1; i++)
         printf("   ");
@@ -168,7 +196,16 @@ void printNode(Node *node, int depth)
     printf("\n");
     for (int i = 0; i <= depth - 1; i++)
         printf("   ");
-    printf("└--");
+    printf(prefix);
+}
+
+void printNode(Node *node, int depth, char *prefix)
+{
+    if (prefix == NULL)
+        __printPrefix("└--", depth);
+    else
+        __printPrefix(prefix, depth);
+
     switch (node->type)
     {
 
@@ -219,25 +256,20 @@ void printNode(Node *node, int depth)
         printf("KEY WORD:%s, IDENTITY:%s \033[32m(%d)\033[0m", "struct", node->val, node->line);
         break;
 
-    // variable type
+    // value
     case INT:
-        printf("TYPE:%s, VALUE:%s \033[32m(%d)\033[0m", "int", node->val, node->line);
+        printf("TYPE:%s, VALUE:%s, WIDTH:%d \033[32m(%d)\033[0m", "int", node->val, node->width, node->line);
         break;
     case FLOAT:
     case OCT:
     case HEX:
-        printf("TYPE:%s, VALUE:%s \033[32m(%d)\033[0m", "float", node->val, node->line);
+        printf("TYPE:%s, VALUE:%s, WIDTH:%d \033[32m(%d)\033[0m", "float", node->val, node->width, node->line);
         break;
     case CHAR:
-        printf("TYPE:%s, VALUE:%s \033[32m(%d)\033[0m", "char", node->val, node->line);
+        printf("TYPE:%s, VALUE:%s, WIDTH:%d \033[32m(%d)\033[0m", "char", node->val, node->width, node->line);
         break;
     case STRING:
-        printf("TYPE:%s, VALUE:%s \033[32m(%d)\033[0m", "string", node->val, node->line);
-        break;
-
-    // type specifier
-    case SPECIFIER:
-        printf("SPECIFIER \033[32m(%d)\033[0m", node->line);
+        printf("TYPE:%s, VALUE:%s, WIDTH:%d \033[32m(%d)\033[0m", "string", node->val, node->width, node->line);
         break;
 
     // identify
@@ -294,27 +326,30 @@ void printNode(Node *node, int depth)
         break;
     case STRUCT_DEF:
         printf("STRUCT DEFINATION \033[32m(%d)\033[0m", node->line);
+        printf("\n");
+        __printPrefix("*--", depth + 1);
+        printf("IDENTITY:%s", node->lexeme);
         break;
 
-    case MODIFIER:
-        printf("MODIFIER \033[32m(%d)\033[0m", node->line);
-        break;
     // variable
     case VAR:
+    {
         printf("VARIABLE \033[32m(%d)\033[0m", node->line);
+        printf("\n");
+        __printPrefix("*--", depth + 1);
+        printf("LEXEME:%s\n", node->lexeme);
+        __printPrefix("*--", depth + 1);
+        printf("MODIFIER:%s\n", node->valModifier);
+        __printPrefix("*--", depth + 1);
+        printf("TYPE:%s\n", node->valType);
+        __printPrefix("*--", depth + 1);
+        printf("STAR:%d\n", node->ptrStar);
+        if (node->arrayDim != NULL)
+            printNode(node->arrayDim, depth + 1, "*--");
+        if (node->initializer != NULL)
+            printNode(node->initializer, depth + 1, "*--");
         break;
-    case VAR_ARRAY:
-        printf("VARIABLE ARRAY \033[32m(%d)\033[0m", node->line);
-        break;
-    case VAR_POINTER:
-        printf("VARIABLE POINTER \033[32m(%d)\033[0m", node->line);
-        break;
-    case VAR_POINTER_ARRAY:
-        printf("VARIABLE POINTER ARRAY \033[32m(%d)\033[0m", node->line);
-        break;
-    case VAR_ARRAY_POINTER:
-        printf("VARIABLE ARRAY POINTER \033[32m(%d)\033[0m", node->line);
-        break;
+    }
 
     // dimension
     case ARRAY_DIM:
@@ -439,7 +474,7 @@ void printNode(Node *node, int depth)
     }
     printf("\n");
     for (int i = 0; i < node->numOfChildren; i++)
-        printNode(node->children[i], depth + 1);
+        printNode(node->children[i], depth + 1, NULL);
 }
 
 void deleteNode(Node *node)
@@ -447,165 +482,67 @@ void deleteNode(Node *node)
     for (int i = 0; i < node->numOfChildren; i++)
         deleteNode(node->children[i]);
     if (node->val != NULL)
+    {
         free(node->val);
-    if (node->code != NULL)
-        free(node->code);
+        node->val = NULL;
+    }
+    if (node->valModifier != NULL)
+    {
+        free(node->valModifier);
+        node->valModifier = NULL;
+    }
+    if (node->lexeme != NULL)
+    {
+        free(node->lexeme);
+        node->lexeme = NULL;
+    }
+    if (node->valType != NULL)
+    {
+        free(node->valType);
+        node->valType = NULL;
+    }
     if (node->children != NULL)
         free(node->children);
+    if (node->initializer != NULL)
+    {
+        deleteNode(node->initializer);
+    }
+    if (node->arrayDim != NULL)
+    {
+        deleteNode(node->arrayDim);
+    }
+}
+
+void __addType(Node *node, Node *specifier)
+{
+    // node
+    /**
+     * SPECIFIER
+     * --MODIFIER
+     * --TYPE
+     */
+    switch (node->type)
+    {
+    case VAR:
+    {
+        // add value modifier
+        node->valModifier = specifier->valModifier;
+        // add value type
+        char *nValType = (char *)malloc(sizeof(char) * (strlen(node->valType) + strlen(specifier->valType) + 1));
+        strcpy(nValType, specifier->valType);
+        free(node->valType);
+        strcat(nValType, node->valType);
+        node->valType = nValType;
+        break;
+    }
+    default:;
+    }
+    for (int i = 0; i < node->numOfChildren; i++)
+        __addType(node->children[i], specifier);
 }
 
 void addType(Node *node, Node *specifier)
 {
-    switch (node->type)
-    {
-    case VAR:
-    case VAR_ARRAY:
-    case VAR_POINTER:
-    case VAR_POINTER_ARRAY:
-    case VAR_ARRAY_POINTER:
-        prependNode(node, specifier);
-        break;
-    default:;
-    }
-    for (int i = 0; i < node->numOfChildren; i++)
-        addType(node->children[i], specifier);
-}
-
-void syntaxAnalysis(Node *node, char *namespace, int syntaxType)
-{
-    switch (node->type)
-    {
-    case FUNC_DEC:
-    { /**
-       * --FUNC_DEC
-       * ----SPECIFIER
-       * ----MODIFIER
-       * ----ARG_DEC (?)
-       */
-        lookupAndFillTable(node, namespace, syntaxType);
-        if (node->numOfChildren > 2)
-        {
-            syntaxAnalysis(node->children[2], namespace, syntaxType);
-        }
-        break;
-    }
-    case FUNC_DEF:
-    { /**
-       * --FUNC_DEF
-       * ----SPECIFIER
-       * ----MODIFIER
-       * ----ARG_DEC (?)
-       * ----STMTS (?)
-       */
-        fillTable(node, namespace, node->level);
-        if (node->numOfChildren > 2)
-        {
-            syntaxAnalysis(node->children[2], namespace, syntaxType);
-        }
-        if (node->numOfChildren > 3)
-        {
-            syntaxAnalysis(node->children[3], namespace, syntaxType);
-        }
-        break;
-    }
-    case VAR_DEF:
-        for (int i = 0; i < node->numOfChildren; i++)
-            syntaxAnalysis(node->children[i], namespace, DEFINATION);
-        break;
-    case VAR_DEC:
-        for (int i = 0; i < node->numOfChildren; i++)
-            syntaxAnalysis(node->children[i], namespace, DECLARE);
-        break;
-    case VAR:
-    case VAR_ARRAY:
-    case VAR_POINTER:
-    case VAR_POINTER_ARRAY:
-    case VAR_ARRAY_POINTER:
-    { /**
-       * --VAR
-       * ----...
-       * ----SPECIFIER
-       * ----...
-       * ----MODIFIER
-       * ----...
-       */
-        if (syntaxType == DECLARE)
-        {
-            lookupAndFillTable(node, namespace, node->level);
-        }
-        else
-        {
-            fillTable(node, namespace, node->level);
-        }
-        for (int i = 0; i < node->numOfChildren; i++)
-        {
-            switch (node->children[i]->type)
-            {
-            case VAR:
-            case VAR_ARRAY:
-            case VAR_POINTER:
-            case VAR_POINTER_ARRAY:
-            case VAR_ARRAY_POINTER:
-                syntaxAnalysis(node->children[i], namespace, syntaxType);
-                break;
-            default:
-                break;
-            }
-        }
-        break;
-    }
-    case STRUCT_DEF:
-    {
-        Node *specifier = node->children[0];
-        Node *identity = createNode(ID, specifier->children[1]->val, node->line, node->level, 0);
-        Node *temp = createNode(VAR_DEF, NULL, node->line, node->level, 2, specifier, identity);
-        fillTable(temp, namespace, node->level);
-        if (node->numOfChildren > 1)
-        {
-            // stmts
-            syntaxAnalysis(node->children[1], identity->val, syntaxType);
-        }
-        if (node->numOfChildren > 2)
-        {
-            // variable
-            syntaxAnalysis(node->children[2], namespace, syntaxType);
-        }
-        free(identity);
-        free(temp);
-        break;
-    }
-    case ARG_DEC:
-    { /**
-       * need level ++
-       * --ARG_DEC
-       * ----VAR...
-       * ----ARG_DEC (?)
-       */
-        Node *var = node->children[0];
-        lookupAndFillTable(var, namespace, node->level + 1);
-        if (node->numOfChildren > 1)
-        {
-            Node *arg_dec = node->children[1];
-            syntaxAnalysis(arg_dec, namespace, syntaxType);
-        }
-        break;
-    }
-    case DOT:
-    case POINTER:
-    {
-        Node *id1 = node->children[0];
-        Node *id2 = node->children[1];
-        syntaxAnalysis(id1, namespace, syntaxType);
-        syntaxAnalysis(id2, namespace, syntaxType);
-        lookupTable(id1, namespace, node->level);
-        char *nnamespace = findNamespace(id1, node->level);
-        lookupTable(id2, nnamespace, node->level);
-        break;
-    }
-    default:
-    {
-        for (int i = 0; i < node->numOfChildren; i++)
-            syntaxAnalysis(node->children[i], namespace, syntaxType);
-    }
-    }
+    __addType(node, specifier);
+    free(specifier);
 }

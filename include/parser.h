@@ -110,25 +110,22 @@
      MODIFIER = 326,
      SPECIFIER = 327,
      VAR = 328,
-     VAR_ARRAY = 329,
-     VAR_POINTER = 330,
-     VAR_ARRAY_POINTER = 331,
-     VAR_POINTER_ARRAY = 332,
-     ARRAY_DIM = 333,
-     FUNC_CALL = 334,
-     STMTS = 335,
-     STMT = 336,
-     GET_ADDR = 337,
-     GET_DATA = 338,
-     RETURN = 339,
-     ARG = 340,
-     IF = 341,
-     ELSE = 342,
-     WHILE = 343,
-     FOR = 344,
-     FOR_START_STMT = 345,
-     FOR_COND_STMT = 346,
-     FOR_ITER_EXP = 347
+     TYPE = 329,
+     ARRAY_DIM = 330,
+     FUNC_CALL = 331,
+     STMTS = 332,
+     STMT = 333,
+     GET_ADDR = 334,
+     GET_DATA = 335,
+     RETURN = 336,
+     ARG = 337,
+     IF = 338,
+     ELSE = 339,
+     WHILE = 340,
+     FOR = 341,
+     FOR_START_STMT = 342,
+     FOR_COND_STMT = 343,
+     FOR_ITER_EXP = 344
    };
 #endif
 
@@ -142,11 +139,12 @@ typedef union YYSTYPE
 #line 12 "src/parser.y"
 
     struct Node* node;
+    char *string;
 
 
 
 /* Line 1676 of yacc.c  */
-#line 150 "include/parser.h"
+#line 148 "include/parser.h"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */

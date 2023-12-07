@@ -1,7 +1,7 @@
 %{
 #include <ext.h>
 #define DEBUG 0
-#define YY_USER_ACTION yylloc.first_line=yylloc.last_line=yylineno;\
+#define YY_USER_ACTION  yylloc.first_line=yylloc.last_line=yylineno;\
                         yylloc.first_column=yycolumn;\
                         yylloc.last_column=yycolumn+yyleng-1; yycolumn+=yyleng;
 
@@ -9,7 +9,7 @@ int yycolumn = 1;
 int level = 0;
 
 void formatPrint(int line, const char* token, char* val) {
-    if (DEBUG == 1) 
+    if (DEBUG == 0) 
     {
         if (strcmp(token, "ERROR") == 0)
             printf("\033[31m<line:%3d, token:%-10s, val:%s\n\033[0m", line, token, val);
@@ -23,9 +23,24 @@ void formatPrint(int line, const char* token, char* val) {
 }
 void setToken(int type, char*val) {
     Node *node = createNode(type, val, yylineno, level, 0);
+    switch (type) {
+        case INT:
+            node->width = 4;
+            break;
+        case FLOAT:
+            node->width = 8;
+            break;
+        case CHAR:
+            node->width = 1;
+            break;
+        case STRING:
+            node->width = strlen(val);
+            break;
+        default:;
+    }
     if (DEBUG)
     {
-        printNode(node, 0);
+        printNode(node, 0, NULL);
         deleteNode(node);
     } else
     {

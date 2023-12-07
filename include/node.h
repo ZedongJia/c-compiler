@@ -9,26 +9,42 @@
 
 typedef struct Node
 {
-    int type;
-    char *val;
-    char *code;
-    int line;
-    int level;
-    int place;
-    int numOfChildren;
-    struct Node *parent;
-    struct Node **children;
+    int type;                 // type of the astNode, VARIABLE, ...
+    char *lexeme;             // identity lexema
+    char *valModifier;        // modifier `const`, `extern`
+    char *valType;            // type of value, int\float...
+    char *val;                // val
+    int ptrStar;              // ptr star
+    struct Node *initializer; // initializer
+    struct Node *arrayDim;    // array dimension
+    int line;                 // line
+    int level;                // level of brace
+    int width;                // bite width
+    int numOfChildren;        // number of children node
+    struct Node *parent;      // parent node
+    struct Node **children;   // children node
 } Node;
 
 Node *createNode(int type, char *val, int line, int level, int numOfChildren, ...);
+
+// prepend
 void prependNode(Node *node, Node *child);
 void prependNodes(Node *node, Node *__extern);
+
+// append
 void appendNode(Node *node, Node *child);
 void appendNodes(Node *node, Node *__extern);
-void printNode(Node *node, int depth);
+
+// remove
+void removeNode(Node *node, int pos);
+
+// format print
+void printNode(Node *node, int depth, char *prefix);
+
+// delete
 void deleteNode(Node *node);
 
-
+// add value type to variable
 void addType(Node *node, Node *specifier);
-void syntaxAnalysis(Node *node, char *namespace, int syntaxType);
+
 #endif
