@@ -580,7 +580,7 @@ int yycolumn = 1;
 int level = 0;
 
 void formatPrint(int line, const char* token, char* val) {
-    if (DEBUG == 0) 
+    if (DEBUG == 1) 
     {
         if (strcmp(token, "ERROR") == 0)
             printf("\033[31m<line:%3d, token:%-10s, val:%s\n\033[0m", line, token, val);
@@ -594,21 +594,6 @@ void formatPrint(int line, const char* token, char* val) {
 }
 void setToken(int type, char*val) {
     Node *node = createNode(type, val, yylineno, level, 0);
-    switch (type) {
-        case INT:
-            node->width = 4;
-            break;
-        case FLOAT:
-            node->width = 8;
-            break;
-        case CHAR:
-            node->width = 1;
-            break;
-        case STRING:
-            node->width = strlen(val);
-            break;
-        default:;
-    }
     if (DEBUG)
     {
         printNode(node, 0, NULL);
@@ -624,7 +609,7 @@ void setToken(int type, char*val) {
 /* 识别token */
 /* 大写为关键字 */
 /* ------------------------------------------------------------------------------------------------------------------------ */
-#line 628 "src/flex.c"
+#line 613 "src/flex.c"
 
 /* Macros after this point can all be overridden by user definitions in
  * section 1.
@@ -775,9 +760,9 @@ YY_DECL
 	register char *yy_cp, *yy_bp;
 	register int yy_act;
 
-#line 81 "src/lex.l"
+#line 66 "src/lex.l"
 
-#line 781 "src/flex.c"
+#line 766 "src/flex.c"
 
 	if ( yy_init )
 		{
@@ -870,295 +855,295 @@ do_action:	/* This label is used only to access EOF actions. */
 	{ /* beginning of action switch */
 case 1:
 YY_RULE_SETUP
-#line 82 "src/lex.l"
+#line 67 "src/lex.l"
 {formatPrint(yylineno, "SGPS", yytext);}
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 83 "src/lex.l"
+#line 68 "src/lex.l"
 {formatPrint(yylineno, "DBPS", yytext);}
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 84 "src/lex.l"
+#line 69 "src/lex.l"
 {formatPrint(yylineno, "int", yytext);setToken(INT, yytext);if (!DEBUG) return INT;}
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 85 "src/lex.l"
+#line 70 "src/lex.l"
 {formatPrint(yylineno, "float", yytext);setToken(FLOAT, yytext);if (!DEBUG)return FLOAT;}
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 86 "src/lex.l"
+#line 71 "src/lex.l"
 {formatPrint(yylineno, "char", yytext);setToken(CHAR, yytext);if (!DEBUG)return CHAR;}
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 87 "src/lex.l"
+#line 72 "src/lex.l"
 {formatPrint(yylineno, "oct", yytext);setToken(OCT, yytext);if (!DEBUG)return FLOAT;}
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 88 "src/lex.l"
+#line 73 "src/lex.l"
 {formatPrint(yylineno, "hex", yytext);setToken(HEX, yytext);if (!DEBUG)return FLOAT;}
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 89 "src/lex.l"
+#line 74 "src/lex.l"
 {formatPrint(yylineno, "string", yytext);setToken(STRING, yytext);if (!DEBUG)return STRING;}
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 90 "src/lex.l"
+#line 75 "src/lex.l"
 {formatPrint(yylineno, "KW_const", yytext);setToken(KW_CONST, NULL);if (!DEBUG)return KW_CONST;}
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 91 "src/lex.l"
+#line 76 "src/lex.l"
 {formatPrint(yylineno, "KW_extern", yytext);setToken(KW_EXTERN, NULL);if (!DEBUG)return KW_EXTERN;}
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 92 "src/lex.l"
+#line 77 "src/lex.l"
 {formatPrint(yylineno, "KW_void", yytext);setToken(KW_VOID, NULL);if (!DEBUG)return KW_VOID;}
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 93 "src/lex.l"
+#line 78 "src/lex.l"
 {formatPrint(yylineno, "KW_int", yytext);setToken(KW_INT, NULL);if (!DEBUG)return KW_INT;}
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 94 "src/lex.l"
+#line 79 "src/lex.l"
 {formatPrint(yylineno, "KW_float", yytext);setToken(KW_FLOAT, NULL);if (!DEBUG)return KW_FLOAT;}
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 95 "src/lex.l"
+#line 80 "src/lex.l"
 {formatPrint(yylineno, "KW_char", yytext);setToken(KW_CHAR, NULL);if (!DEBUG)return KW_CHAR;}
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 96 "src/lex.l"
+#line 81 "src/lex.l"
 {formatPrint(yylineno, "KW_return", yytext);setToken(KW_RETURN, NULL);if (!DEBUG)return KW_RETURN;}
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 97 "src/lex.l"
+#line 82 "src/lex.l"
 {formatPrint(yylineno, "KW_if", yytext);setToken(KW_IF, NULL);if (!DEBUG)return KW_IF;}
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 98 "src/lex.l"
+#line 83 "src/lex.l"
 {formatPrint(yylineno, "KW_else", yytext);setToken(KW_ELSE, NULL);if (!DEBUG)return KW_ELSE;}
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 99 "src/lex.l"
+#line 84 "src/lex.l"
 {formatPrint(yylineno, "KW_while", yytext);setToken(KW_WHILE, NULL);if (!DEBUG)return KW_WHILE;}
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 100 "src/lex.l"
+#line 85 "src/lex.l"
 {formatPrint(yylineno, "KW_for", yytext);setToken(KW_FOR, NULL);if (!DEBUG)return KW_FOR;}
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
-#line 101 "src/lex.l"
+#line 86 "src/lex.l"
 {formatPrint(yylineno, "KW_break", yytext);setToken(KW_BREAK, NULL);if (!DEBUG)return KW_BREAK;}
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
-#line 102 "src/lex.l"
+#line 87 "src/lex.l"
 {formatPrint(yylineno, "KW_continue", yytext);setToken(KW_CONTINUE, NULL);if (!DEBUG)return KW_CONTINUE;}
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
-#line 103 "src/lex.l"
+#line 88 "src/lex.l"
 {formatPrint(yylineno, "KW_typedef", yytext);setToken(KW_TYPEDEF, NULL);if (!DEBUG)return KW_TYPEDEF;}
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
-#line 104 "src/lex.l"
+#line 89 "src/lex.l"
 {formatPrint(yylineno, "KW_struct", yytext);setToken(KW_STRUCT, NULL);if (!DEBUG)return KW_STRUCT;}
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
-#line 105 "src/lex.l"
+#line 90 "src/lex.l"
 {formatPrint(yylineno, "ID", yytext);setToken(ID, yytext);if (!DEBUG)return ID;}
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
-#line 106 "src/lex.l"
+#line 91 "src/lex.l"
 {formatPrint(yylineno, "SEMI", yytext);setToken(SEMI, NULL);if (!DEBUG)return SEMI;}
 	YY_BREAK
 case 26:
 YY_RULE_SETUP
-#line 107 "src/lex.l"
+#line 92 "src/lex.l"
 {formatPrint(yylineno, "COMMA", yytext);setToken(COMMA, NULL);if (!DEBUG)return COMMA;}
 	YY_BREAK
 case 27:
 YY_RULE_SETUP
-#line 108 "src/lex.l"
+#line 93 "src/lex.l"
 {formatPrint(yylineno, "GREATER", yytext);setToken(GREATER, yytext);if (!DEBUG)return GREATER;}
 	YY_BREAK
 case 28:
 YY_RULE_SETUP
-#line 109 "src/lex.l"
+#line 94 "src/lex.l"
 {formatPrint(yylineno, "SMALLER", yytext);setToken(SMALLER, yytext);if (!DEBUG)return SMALLER;}
 	YY_BREAK
 case 29:
 YY_RULE_SETUP
-#line 110 "src/lex.l"
+#line 95 "src/lex.l"
 {formatPrint(yylineno, "GREATER_EQUAL", yytext);setToken(GREATER_EQUAL, yytext);if (!DEBUG)return GREATER_EQUAL;}
 	YY_BREAK
 case 30:
 YY_RULE_SETUP
-#line 111 "src/lex.l"
+#line 96 "src/lex.l"
 {formatPrint(yylineno, "SMALLER_EQUAL", yytext);setToken(SMALLER_EQUAL, yytext);if (!DEBUG)return SMALLER_EQUAL;}
 	YY_BREAK
 case 31:
 YY_RULE_SETUP
-#line 112 "src/lex.l"
+#line 97 "src/lex.l"
 {formatPrint(yylineno, "EQUAL", yytext);setToken(EQUAL, yytext);if (!DEBUG)return EQUAL;}
 	YY_BREAK
 case 32:
 YY_RULE_SETUP
-#line 113 "src/lex.l"
+#line 98 "src/lex.l"
 {formatPrint(yylineno, "NOT_EQUAL", yytext);setToken(NOT_EQUAL, yytext);if (!DEBUG)return NOT_EQUAL;}
 	YY_BREAK
 case 33:
 YY_RULE_SETUP
-#line 114 "src/lex.l"
+#line 99 "src/lex.l"
 {formatPrint(yylineno, "ASSIGNOP", yytext);setToken(ASSIGN, NULL);if (!DEBUG)return ASSIGN;}
 	YY_BREAK
 case 34:
 YY_RULE_SETUP
-#line 115 "src/lex.l"
+#line 100 "src/lex.l"
 {formatPrint(yylineno, "PLUS", yytext);setToken(PLUS, NULL);if (!DEBUG)return PLUS;}		
 	YY_BREAK
 case 35:
 YY_RULE_SETUP
-#line 116 "src/lex.l"
+#line 101 "src/lex.l"
 {formatPrint(yylineno, "MINUS", yytext);setToken(MINUS, NULL);if (!DEBUG)return MINUS;}
 	YY_BREAK
 case 36:
 YY_RULE_SETUP
-#line 117 "src/lex.l"
+#line 102 "src/lex.l"
 {formatPrint(yylineno, "DELIVERY", yytext);setToken(DELIVERY, NULL);if (!DEBUG)return DELIVERY;}
 	YY_BREAK
 case 37:
 YY_RULE_SETUP
-#line 118 "src/lex.l"
+#line 103 "src/lex.l"
 {formatPrint(yylineno, "DPLUS", yytext);setToken(DPLUS, NULL);if (!DEBUG)return DPLUS;}
 	YY_BREAK
 case 38:
 YY_RULE_SETUP
-#line 119 "src/lex.l"
+#line 104 "src/lex.l"
 {formatPrint(yylineno, "DMINUS", yytext);setToken(DMINUS, NULL);if (!DEBUG)return DMINUS;}
 	YY_BREAK
 case 39:
 YY_RULE_SETUP
-#line 120 "src/lex.l"
+#line 105 "src/lex.l"
 {formatPrint(yylineno, "STAR", yytext);setToken(STAR, NULL);if (!DEBUG)return STAR;}
 	YY_BREAK
 case 40:
 YY_RULE_SETUP
-#line 121 "src/lex.l"
+#line 106 "src/lex.l"
 {formatPrint(yylineno, "SAND", yytext);setToken(SAND, NULL);if (!DEBUG)return SAND;}
 	YY_BREAK
 case 41:
 YY_RULE_SETUP
-#line 122 "src/lex.l"
+#line 107 "src/lex.l"
 {formatPrint(yylineno, "DIV", yytext);setToken(DIV, NULL);if (!DEBUG)return DIV;}
 	YY_BREAK
 case 42:
 YY_RULE_SETUP
-#line 123 "src/lex.l"
+#line 108 "src/lex.l"
 {formatPrint(yylineno, "AND", yytext);setToken(AND, NULL);if (!DEBUG)return AND;}
 	YY_BREAK
 case 43:
 YY_RULE_SETUP
-#line 124 "src/lex.l"
+#line 109 "src/lex.l"
 {formatPrint(yylineno, "OR", yytext);setToken(OR, NULL);if (!DEBUG)return OR;}
 	YY_BREAK
 case 44:
 YY_RULE_SETUP
-#line 125 "src/lex.l"
+#line 110 "src/lex.l"
 {formatPrint(yylineno, "NOT", yytext);setToken(NOT, NULL);if (!DEBUG)return NOT;}
 	YY_BREAK
 case 45:
 YY_RULE_SETUP
-#line 126 "src/lex.l"
+#line 111 "src/lex.l"
 {formatPrint(yylineno, "LP", yytext);setToken(LP, NULL);if (!DEBUG)return LP;}
 	YY_BREAK
 case 46:
 YY_RULE_SETUP
-#line 127 "src/lex.l"
+#line 112 "src/lex.l"
 {formatPrint(yylineno, "RP", yytext);setToken(RP, NULL);if (!DEBUG)return RP;}
 	YY_BREAK
 case 47:
 YY_RULE_SETUP
-#line 128 "src/lex.l"
+#line 113 "src/lex.l"
 {formatPrint(yylineno, "LC", yytext);setToken(LC, NULL);level++;if (!DEBUG)return LC;}
 	YY_BREAK
 case 48:
 YY_RULE_SETUP
-#line 129 "src/lex.l"
+#line 114 "src/lex.l"
 {formatPrint(yylineno, "RC", yytext);setToken(RC, NULL);level--;if (!DEBUG)return RC;}
 	YY_BREAK
 case 49:
 YY_RULE_SETUP
-#line 130 "src/lex.l"
+#line 115 "src/lex.l"
 {formatPrint(yylineno, "LB", yytext);setToken(LB, NULL);if (!DEBUG)return LB;}
 	YY_BREAK
 case 50:
 YY_RULE_SETUP
-#line 131 "src/lex.l"
+#line 116 "src/lex.l"
 {formatPrint(yylineno, "RB", yytext);setToken(RB, NULL);if (!DEBUG)return RB;}
 	YY_BREAK
 case 51:
 YY_RULE_SETUP
-#line 132 "src/lex.l"
+#line 117 "src/lex.l"
 {formatPrint(yylineno, "DOT", yytext);setToken(DOT, NULL);if (!DEBUG)return DOT;}
 	YY_BREAK
 case 52:
 YY_RULE_SETUP
-#line 133 "src/lex.l"
+#line 118 "src/lex.l"
 {formatPrint(yylineno, "POINTER", yytext);setToken(POINTER, NULL);if (!DEBUG)return POINTER;}
 	YY_BREAK
 case 53:
 YY_RULE_SETUP
-#line 134 "src/lex.l"
+#line 119 "src/lex.l"
 {formatPrint(yylineno, "#include", yytext);setToken(INCLUDE, NULL);if (!DEBUG)return INCLUDE;}
 	YY_BREAK
 case 54:
 YY_RULE_SETUP
-#line 135 "src/lex.l"
+#line 120 "src/lex.l"
 {formatPrint(yylineno, "#define", yytext);setToken(DEFINE, NULL);if (!DEBUG)return DEFINE;}
 	YY_BREAK
 case 55:
 YY_RULE_SETUP
-#line 136 "src/lex.l"
+#line 121 "src/lex.l"
 {yycolumn=1;}   
 	YY_BREAK
 case 56:
 YY_RULE_SETUP
-#line 137 "src/lex.l"
+#line 122 "src/lex.l"
 {}
 	YY_BREAK
 case 57:
 YY_RULE_SETUP
-#line 138 "src/lex.l"
+#line 123 "src/lex.l"
 {formatPrint(yylineno, "ERROR", yytext);}
 	YY_BREAK
 case 58:
 YY_RULE_SETUP
-#line 139 "src/lex.l"
+#line 124 "src/lex.l"
 ECHO;
 	YY_BREAK
-#line 1162 "src/flex.c"
+#line 1147 "src/flex.c"
 			case YY_STATE_EOF(INITIAL):
 				yyterminate();
 
@@ -2042,5 +2027,5 @@ int main()
 	return 0;
 	}
 #endif
-#line 139 "src/lex.l"
+#line 124 "src/lex.l"
 

@@ -13,6 +13,7 @@ typedef struct Node
     char *lexeme;             // identity lexema
     char *valModifier;        // modifier `const`, `extern`
     char *valType;            // type of value, int\float...
+    char *complexType;        // complex type, struct, ptr,arr...
     char *val;                // val
     int ptrStar;              // ptr star
     struct Node *initializer; // initializer
@@ -23,6 +24,8 @@ typedef struct Node
     int numOfChildren;        // number of children node
     struct Node *parent;      // parent node
     struct Node **children;   // children node
+    struct Runtime *runtime;  // find runtime
+    struct Symbol *symbol;    // find symbol
 } Node;
 
 Node *createNode(int type, char *val, int line, int level, int numOfChildren, ...);
@@ -45,6 +48,6 @@ void printNode(Node *node, int depth, char *prefix);
 void deleteNode(Node *node);
 
 // add value type to variable
-void addType(Node *node, Node *specifier);
+void analysisVar(Node *node, Node *specifier);
 
 #endif

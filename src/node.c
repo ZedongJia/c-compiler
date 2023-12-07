@@ -18,6 +18,9 @@ Node *createNode(int type, char *val, int line, int level, int numOfChildren, ..
     // set valType
     node->valType = NULL;
 
+    // set complex type
+    node->complexType = NULL;
+
     // set node val
     if (val != NULL)
     {
@@ -258,18 +261,18 @@ void printNode(Node *node, int depth, char *prefix)
 
     // value
     case INT:
-        printf("TYPE:%s, VALUE:%s, WIDTH:%d \033[32m(%d)\033[0m", "int", node->val, node->width, node->line);
+        printf("TYPE:%s, VALUE:%s \033[32m(%d)\033[0m", "int", node->val, node->line);
         break;
     case FLOAT:
     case OCT:
     case HEX:
-        printf("TYPE:%s, VALUE:%s, WIDTH:%d \033[32m(%d)\033[0m", "float", node->val, node->width, node->line);
+        printf("TYPE:%s, VALUE:%s \033[32m(%d)\033[0m", "float", node->val, node->line);
         break;
     case CHAR:
-        printf("TYPE:%s, VALUE:%s, WIDTH:%d \033[32m(%d)\033[0m", "char", node->val, node->width, node->line);
+        printf("TYPE:%s, VALUE:%s \033[32m(%d)\033[0m", "char", node->val, node->line);
         break;
     case STRING:
-        printf("TYPE:%s, VALUE:%s, WIDTH:%d \033[32m(%d)\033[0m", "string", node->val, node->width, node->line);
+        printf("TYPE:%s, VALUE:%s \033[32m(%d)\033[0m", "string", node->val, node->line);
         break;
 
     // identify
@@ -343,6 +346,8 @@ void printNode(Node *node, int depth, char *prefix)
         __printPrefix("*--", depth + 1);
         printf("TYPE:%s\n", node->valType);
         __printPrefix("*--", depth + 1);
+        printf("COMPLEX TYPE:%s\n", node->complexType);
+        __printPrefix("*--", depth + 1);
         printf("STAR:%d\n", node->ptrStar);
         if (node->arrayDim != NULL)
             printNode(node->arrayDim, depth + 1, "*--");
@@ -353,7 +358,10 @@ void printNode(Node *node, int depth, char *prefix)
 
     // dimension
     case ARRAY_DIM:
-        printf("ARRAY DIMENSION \033[32m(%d)\033[0m", node->line);
+        printf("ARRAY DIMENSION:%d \033[32m(%d)\033[0m", node->val, node->line);
+        printf("\n");
+        if (node->arrayDim != NULL)
+            printNode(node->arrayDim, depth + 1, "*--");
         break;
 
     // stars
@@ -513,13 +521,43 @@ void deleteNode(Node *node)
     }
 }
 
-void __addType(Node *node, Node *specifier)
+int __calculateSpanDim(Node *dimNode, int width, int initializerSize, int depth)
+{
+    int spanDim = atoi(dimNode->val);
+    if (spanDim == 0)
+    {
+        // [] empty
+        if (dimNode->arrayDim != NULL)
+        {
+            // [][] empty
+            error(dimNode->line, ARRAY_INCOMPLETED);
+        }
+        if (initializerSize == 0)
+            return 1;
+        spanDim = initializerSize;
+    }
+    else
+    {
+        // [num]
+        if (dimNode->arrayDim != NULL)
+        {
+            spanDim = spanDim * __calculateSpanDim(dimNode->arrayDim, width, initializerSize / spanDim, depth + 1);
+        }
+    }
+    if (depth == 0)
+    {
+        return spanDim * width;
+    }
+    else
+    {
+        return spanDim;
+    }
+}
+
+void __analysisVar(Node *node, Node *specifier)
 {
     // node
     /**
-     * SPECIFIER
-     * --MODIFIER
-     * --TYPE
      */
     switch (node->type)
     {
@@ -528,21 +566,58 @@ void __addType(Node *node, Node *specifier)
         // add value modifier
         node->valModifier = specifier->valModifier;
         // add value type
-        char *nValType = (char *)malloc(sizeof(char) * (strlen(node->valType) + strlen(specifier->valType) + 1));
-        strcpy(nValType, specifier->valType);
-        free(node->valType);
-        strcat(nValType, node->valType);
-        node->valType = nValType;
+        node->valType = specifier->valType;
+
+        // get offset
+        if (node->ptrStar != 0)
+        {
+            node->width = 4;
+        }
+        else if (strstr(node->valType, "int"))
+        {
+            node->width = 4;
+        }
+        else if (strstr(node->valType, "float"))
+        {
+            node->width = 4;
+        }
+        else if (strstr(node->valType, "char"))
+        {
+            node->width = 1;
+        }
+        else if (strstr(node->valType, "void"))
+        {
+            node->width = 0;
+        }
+        else if (strstr(node->valType, "struct_"))
+        {
+            Runtime *runtime = findRuntimeByNamespace(structEnv, node->valType);
+            node->width = runtime->offset;
+        }
+        if (node->arrayDim != NULL)
+        {
+            int initializerSize = 0;
+            if (node->initializer != NULL)
+            {
+                initializerSize = node->initializer->numOfChildren;
+            }
+            node->width = __calculateSpanDim(node->arrayDim, node->width, initializerSize, 0);
+        }
+
+        // calculate offset and type
+        node->symbol->offset = node->runtime->offset + node->width;
+        node->runtime->offset += node->width;
+        node->symbol->type = node->valType;
         break;
     }
     default:;
     }
     for (int i = 0; i < node->numOfChildren; i++)
-        __addType(node->children[i], specifier);
+        __analysisVar(node->children[i], specifier);
 }
 
-void addType(Node *node, Node *specifier)
+void analysisVar(Node *node, Node *specifier)
 {
-    __addType(node, specifier);
+    __analysisVar(node, specifier);
     free(specifier);
 }

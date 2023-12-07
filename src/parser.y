@@ -102,7 +102,6 @@ Program : GlobalStmts {
 
 /*
     statments level -> control the variable defination and declare
-
 */
 
 GlobalStmts : GlobalStmt {
@@ -207,7 +206,7 @@ StructMemStmt   : VarDefStmt {
 
 /* declare */
 VarDecStmt  : TypeSpecifier VarDec SEMI {
-                addType($2, $1);
+                analysisVar($2, $1);
                 $$ =$2;
             }
             ;
@@ -221,13 +220,15 @@ VarDec  : Var {
         }
         ;
 
-FuncDecStmt : TypeSpecifier Var LP ArgDecs RP SEMI {
-                addType($2, $1);
+FuncDecStmt : TypeSpecifier Var PrePushEnv LP ArgDecs RP SEMI {
+                analysisVar($2, $1);
                 $$ = createNode(FUNC_DEC, NULL, $2->line, level, 2, $2, $4);
+                moveToPrevRuntime();
             }
-            | TypeSpecifier Var LP RP SEMI {
-                addType($2, $1);
+            | TypeSpecifier Var PrePushEnv LP RP SEMI {
+                analysisVar($2, $1);
                 $$ = createNode(FUNC_DEC, NULL, $2->line, level, 1, $2);
+                moveToPrevRuntime();
             }
             ;
 
@@ -241,7 +242,7 @@ ArgDecs : ArgDec {
         ;
 
 ArgDec  : TypeSpecifier Var {
-            addType($2, $1);
+            analysisVar($2, $1);
             $$ = createNode(ARG_DEC, NULL, $2->line, level, 1, $2);
         }
         ;
@@ -249,7 +250,7 @@ ArgDec  : TypeSpecifier Var {
 /* defination */
 
 VarDefStmt  : TypeSpecifier VarDef SEMI {
-                addType($2, $1);
+                analysisVar($2, $1);
                 $$ = $2;
             }
             ;
@@ -288,21 +289,26 @@ VarDef  : Var ASSIGN Initializer {
         }
         ;
 
-FuncDefStmt : TypeSpecifier Var LP ArgDecs RP LC LocalStmts RC {
-                addType($2, $1);
+FuncDefStmt : TypeSpecifier Var PrePushEnv LP ArgDecs RP LC LocalStmts RC {
+                analysisVar($2, $1);
                 $$ = createNode(FUNC_DEF, NULL, $2->line, level, 3, $2, $4, $7);
+                
+                moveToPrevRuntime();
             }
-            | TypeSpecifier Var LP RP LC LocalStmts RC {
-                addType($2, $1);
+            | TypeSpecifier Var PrePushEnv LP RP LC LocalStmts RC {
+                analysisVar($2, $1);
                 $$ = createNode(FUNC_DEF, NULL, $2->line, level, 3, $2, $6);
+                moveToPrevRuntime();
             }
-            | TypeSpecifier Var LP ArgDecs RP LC RC {
-                addType($2, $1);
+            | TypeSpecifier Var PrePushEnv LP ArgDecs RP LC RC {
+                analysisVar($2, $1);
                 $$ = createNode(FUNC_DEF, NULL, $2->line, level, 3, $2, $4);
+                moveToPrevRuntime();
             }
-            | TypeSpecifier Var LP RP LC RC {
-                addType($2, $1);
+            | TypeSpecifier Var PrePushEnv LP RP LC RC {
+                analysisVar($2, $1);
                 $$ = createNode(FUNC_DEF, NULL, $2->line, level, 1, $2);
+                moveToPrevRuntime();
             }
             ;
 
@@ -311,21 +317,22 @@ StructDefStmt   : StructDef SEMI {
                     $$ = $1;
                 }
                 | StructDef VarDef SEMI {
-                    addType($2, $1->children[0]);
+                    analysisVar($2, $1->children[0]);
                     removeNode($1, 0);
                     appendNode($1, $2);
                     $$ = $1;
                 }
                 | StructDef VarDec SEMI {
-                    addType($2, $1->children[0]);
+                    analysisVar($2, $1->children[0]);
                     removeNode($1, 0);
                     appendNode($1, $2);
                     $$ = $1;
                 }
                 ;
 
-StructDef   : KW_STRUCT ID LC StructMemStmts RC {
+StructDef   : KW_STRUCT ID PushEnv LC StructMemStmts RC {
 
+                /* get struct type `struct_id` */
                 char *type = (char*)malloc(sizeof(char)*strlen($2->val) + sizeof(char) * 7);
                 strcpy(type, "struct_");
                 strcat(type, $2->val);
@@ -335,9 +342,27 @@ StructDef   : KW_STRUCT ID LC StructMemStmts RC {
                 specifier->valModifier = "default";
 
                 $$ = createNode(STRUCT_DEF, NULL, $1->line, level, 2, specifier, $4);
+                /* add property */
                 $$->lexeme = $2->val;
+                $$->valType = "struct";
+                $$->valModifier = "default";
+                $$->complexType = "var";
+                $$->width = 4;
+
+                /* namespace runtime and register */
+                currRuntime->namespace = type;
+                pushRuntime(structEnv, currRuntime);
+                moveToPrevRuntime();
+
+                /* add struct id */
+                addSymbol(currRuntime, $$);
+
+                $$->symbol->offset = $$->runtime->offset + $$->width;
+                $$->runtime->offset += $$->width;
+                $$->symbol->type = $$->valType;
             }
-            | KW_STRUCT ID LC RC {
+            | KW_STRUCT ID PushEnv LC RC {
+                /* get struct type `struct_id` */
                 char *type = (char*)malloc(sizeof(char)*strlen($2->val) + sizeof(char) * 7);
                 strcpy(type, "struct_");
                 strcat(type, $2->val);
@@ -347,47 +372,70 @@ StructDef   : KW_STRUCT ID LC StructMemStmts RC {
                 specifier->valModifier = "default";
 
                 $$ = createNode(STRUCT_DEF, NULL, $1->line, level, 1, specifier);
+                /* add property */
                 $$->lexeme = $2->val;
+                $$->valType = "struct";
+                $$->valModifier = "default";
+                $$->complexType = "var";
+                $$->width = 4;
+
+                /* namespace runtime and register */
+                currRuntime->namespace = type;
+                pushRuntime(structEnv, currRuntime);
+                moveToPrevRuntime();
+                
+                /* add struct id */
+                addSymbol(currRuntime, $$);
+
+                $$->symbol->offset = $$->runtime->offset + $$->width;
+                $$->runtime->offset += $$->width;
+                $$->symbol->type = $$->valType;
             }
             ;
 
 /* variable */
 Var : ID {
         $$ = createNode(VAR, NULL, $1->line, level, 0);
-        $$->valType = "_var";
+        $$->complexType = "var";
         $$->lexeme = $1->val;
+        addSymbol(currRuntime, $$);
     }
     | ID ArrayDims {
         $$ = createNode(VAR, NULL, $1->line, level, 0);
-        $$->valType = "_arr";
+        $$->complexType = "arr";
         $$->lexeme = $1->val;
         $$->arrayDim = $2;
+        addSymbol(currRuntime, $$);
     }
     | Stars ID {
         $$ = createNode(VAR, NULL, $1->line, level, 0);
-        $$->valType = "_ptr";
+        $$->complexType = "ptr";
         $$->lexeme = $2->val;
         $$->ptrStar = atoi($1->val);
+        addSymbol(currRuntime, $$);
     }
     | LP Stars ID RP {
         $$ = createNode(VAR, NULL, $1->line, level, 0);
-        $$->valType = "_ptr";
+        $$->complexType = "ptr";
         $$->lexeme = $3->val;
         $$->ptrStar = atoi($2->val);
+        addSymbol(currRuntime, $$);
     }
     | LP Stars ID ArrayDims RP {
         $$ = createNode(VAR, NULL, $1->line, level, 0);
-        $$->valType = "_ptr_arr";
+        $$->complexType = "ptr_arr";
         $$->lexeme = $3->val;
         $$->ptrStar = atoi($2->val);
         $$->arrayDim = $4;
+        addSymbol(currRuntime, $$);
     }
     | LP Stars ID RP ArrayDims {
         $$ = createNode(VAR, NULL, $1->line, level, 0);
-        $$->valType = "_arr_ptr";
+        $$->valType = "arr_ptr";
         $$->lexeme = $3->val;
         $$->ptrStar = atoi($2->val);
         $$->arrayDim = $5;
+        addSymbol(currRuntime, $$);
     }
     | Stars ID ArrayDims {
         $$ = createNode(VAR, NULL, $1->line, level, 0);
@@ -395,6 +443,7 @@ Var : ID {
         $$->lexeme = $2->val;
         $$->ptrStar = atoi($1->val);
         $$->arrayDim = $3;
+        addSymbol(currRuntime, $$);
     }
     ;
 
@@ -416,19 +465,18 @@ ArrayDims   : ArrayDim {
                 $$ = $1;
             }
             | ArrayDim ArrayDims {
-                appendNode($1, $2);
+                $1->arrayDim = $2;
                 $$ = $1;
             }
             ;
 
 ArrayDim    : LB INT RB {
-                $$ = createNode(ARRAY_DIM, NULL, $1->line, level, 1, $2);
-            }
-            | LB ID RB {
-                $$ = createNode(ARRAY_DIM, NULL, $1->line, level, 1, $2);
+                $$ = createNode(ARRAY_DIM, NULL, $1->line, level, 0);
+                $$->val = $2->val;
             }
             | LB RB {
                 $$ = createNode(ARRAY_DIM, NULL, $1->line, level, 0);
+                $$->val = "0";
             }
             ;
 
@@ -456,7 +504,8 @@ Initializer : INT {
     {}
  */
 BraceInitializer    : LC InitializerList RC {
-                        $$ = createNode(BRACE_INITIALIZER, NULL, $1->line, level, 1, $2);
+                        $$ = createNode(BRACE_INITIALIZER, NULL, $1->line, level, 0);
+                        appendNodes($$, $2);
                     }
                     | LC RC {
                         $$ = createNode(BRACE_INITIALIZER, NULL, $1->line, level, 0);
@@ -692,11 +741,13 @@ While   : KW_WHILE LP Exp RP StmtBlock {
         ;
 
 /* for */
-For : KW_FOR LP ForStartStmt ForCondStmt ForIterExp RP StmtBlock {
+For : KW_FOR PrePushEnv LP ForStartStmt ForCondStmt ForIterExp RP StmtBlock {
         $$ = createNode(FOR, NULL, $1->line, level, 4, $3, $4, $5, $7);
+        moveToPrevRuntime();
     }
-    | KW_FOR LP ForStartStmt ForCondStmt RP StmtBlock {
+    | KW_FOR PrePushEnv LP ForStartStmt ForCondStmt RP StmtBlock {
         $$ = createNode(FOR, NULL, $1->line, level, 3, $3, $4, $6);
+        moveToPrevRuntime();
     }
     ;
 ForStartStmt    : VarDefStmt {
@@ -748,6 +799,17 @@ StmtBlock   : LocalStmt {
                 $$ = createNode(STMTS, NULL, $1->line, level, 0);
             }
             ;
+
+
+PushEnv : {
+            // add runtime
+            moveToNextRuntime(level);
+        }
+        ;
+PrePushEnv  : {
+                // previously add runtime before level go next
+                moveToNextRuntime(level + 1);
+            }
 %%
 void yyerror(const char* fmt, ...)
 {
