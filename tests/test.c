@@ -1,14 +1,28 @@
-int a[5];
-int b[] = {1, 2, 3, 4, 5};
 
-// // int const ab();
-struct test
+
+int main(int argc, char const *argv[])
 {
-    /* data */
-    char b;
-    struct test *test;
-    int a;
-}tt, te;
+    int *a = (int *)malloc(5);
+    char *a;
+    a[5] = 6;
+    for (int i = 0; i < 5; i++)
+    {
+        printf("%d", i);
+    }
+    return 0;
+}
+
+// int a[5];
+// int b[] = {1, 2, 3, 4, 5};
+
+// int const ab();
+// struct test
+// {
+//     /* data */
+//     char b;
+//     struct test *test;
+//     int a;
+// }tt, te;
 // int a[5][][];
 // extern int add(int a, char b);
 // void a;
@@ -127,12 +141,9 @@ struct test
 
 // void test(int a, int b);
 
-// // int (*get())[10] {
 
-// // }
+// char *ss() {
 
-// // char *ss() {
-
-// // }
+// }
 
 // char const a;

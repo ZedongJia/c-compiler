@@ -8,12 +8,15 @@
 // symbol <-map-> variable
 typedef struct Symbol
 {
-    Node *ptr;    // first id, then variable
-    char *lexeme; // first get
-    char *type;   // second get
-    int line;
-    int offset; // second get
-    int duplicate;
+    int pos;           // position in runtime
+    int isDefination;  // defination or declare
+    Node *ptr;         // first id, then variable
+    char *lexeme;      // first get
+    char *type;        // second get
+    char *complexType; // second get
+    int line;          // first get
+    int offset;        // second get
+    int duplicate;     // first get
 } Symbol;
 
 typedef struct Runtime
@@ -57,7 +60,8 @@ Runtime *createRuntime();
 // symbol methods
 Symbol *createSymbol();
 void addSymbol(Runtime *runtime, Node *var);
-
+void deleteSymbol(Runtime *runtime, int pos);
+int lookAheadDefination(Runtime *runtime, Symbol *symbol);
 // debug
 void printRuntime(Runtime *runtime);
 void printEnv();

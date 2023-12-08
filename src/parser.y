@@ -41,6 +41,7 @@
 %token <node> PLUS MINUS DPLUS FDPLUS BDPLUS DMINUS FDMINUS BDMINUS MULTIPLY DIV DELIVERY
 %token <node> SEMI COMMA LP RP LC RC LB RB
 %token <node> DOT POINTER STAR
+%token <node> TRANSFORM
 /* variable type */
 %token <node> INT FLOAT OCT HEX CHAR STRING
 /* pretreatment key word */
@@ -79,15 +80,31 @@
 %token IF ELSE WHILE FOR FOR_START_STMT FOR_COND_STMT FOR_ITER_EXP
 
 /* priority */
-%left COMMA
-%left ID INT FLOAT CHAR
-%left ASSIGN
-%left GREATER SMALLER GREATER_EQUAL SMALLER_EQUAL EQUAL NOT_EQUAL AND OR
-%left PLUS MINUS
-%left STAR DIV
-%left LP RP LC RC
-%left DOT POINTER
-%right NOT DPLUS DMINUS SAND
+%left COMMA           // ,
+%left ASSIGN          // =
+%left OR              // ||
+%left AND             // &&
+%left NOT_EQUAL       // !=
+%left EQUAL           // ==
+%left SMALLER_EQUAL   // <=
+%left SMALLER         // <
+%left GREATER_EQUAL   // >=
+%left GREATER         // >
+%left MINUS           // -
+%left PLUS            // +
+%left DELIVERY        // %
+%left MUL             // *
+%left DIV             // /
+%right NOT            // !
+%right GADDR          // &
+%right GDATA          // *
+%right DMINUS         // --
+%right DPLUS          // ++
+%right SMINUS         // -
+%left POINTER         // ->
+%left DOT             // .
+%left LP RP LC RC     // ()
+%left LB RB           // []
 
 /* no priority */
 %nonassoc KW_ELSE
@@ -96,7 +113,8 @@
 %%
 Program : GlobalStmts {
             $$ = NULL;
-            astTree = createNode(PROGRAM, NULL, $1->line, level, 1, $1);
+            astTree = createNode(PROGRAM, NULL, $1->line, level, 0);
+            appendNodes(astTree, $1);
         }
         ;
 
@@ -222,7 +240,7 @@ VarDec  : Var {
 
 FuncDecStmt : TypeSpecifier Var PrePushEnv LP ArgDecs RP SEMI {
                 analysisVar($2, $1);
-                $$ = createNode(FUNC_DEC, NULL, $2->line, level, 2, $2, $4);
+                $$ = createNode(FUNC_DEC, NULL, $2->line, level, 2, $2, $5);
                 moveToPrevRuntime();
             }
             | TypeSpecifier Var PrePushEnv LP RP SEMI {
@@ -236,7 +254,7 @@ ArgDecs : ArgDec {
             $$ = $1;
         }
         | ArgDec COMMA ArgDecs {
-            appendNodes($1, $3);
+            appendNodes($1->children[0], $3);
             $$ = $1;
         }
         ;
@@ -291,18 +309,18 @@ VarDef  : Var ASSIGN Initializer {
 
 FuncDefStmt : TypeSpecifier Var PrePushEnv LP ArgDecs RP LC LocalStmts RC {
                 analysisVar($2, $1);
-                $$ = createNode(FUNC_DEF, NULL, $2->line, level, 3, $2, $4, $7);
+                $$ = createNode(FUNC_DEF, NULL, $2->line, level, 3, $2, $5, $8);
                 
                 moveToPrevRuntime();
             }
             | TypeSpecifier Var PrePushEnv LP RP LC LocalStmts RC {
                 analysisVar($2, $1);
-                $$ = createNode(FUNC_DEF, NULL, $2->line, level, 3, $2, $6);
+                $$ = createNode(FUNC_DEF, NULL, $2->line, level, 3, $2, $7);
                 moveToPrevRuntime();
             }
             | TypeSpecifier Var PrePushEnv LP ArgDecs RP LC RC {
                 analysisVar($2, $1);
-                $$ = createNode(FUNC_DEF, NULL, $2->line, level, 3, $2, $4);
+                $$ = createNode(FUNC_DEF, NULL, $2->line, level, 3, $2, $5);
                 moveToPrevRuntime();
             }
             | TypeSpecifier Var PrePushEnv LP RP LC RC {
@@ -341,12 +359,11 @@ StructDef   : KW_STRUCT ID PushEnv LC StructMemStmts RC {
                 specifier->valType = type;
                 specifier->valModifier = "default";
 
-                $$ = createNode(STRUCT_DEF, NULL, $1->line, level, 2, specifier, $4);
+                $$ = createNode(STRUCT_DEF, NULL, $1->line, level, 2, specifier, $5);
                 /* add property */
                 $$->lexeme = $2->val;
                 $$->valType = "struct";
                 $$->valModifier = "default";
-                $$->complexType = "var";
                 $$->width = 4;
 
                 /* namespace runtime and register */
@@ -357,9 +374,8 @@ StructDef   : KW_STRUCT ID PushEnv LC StructMemStmts RC {
                 /* add struct id */
                 addSymbol(currRuntime, $$);
 
-                $$->symbol->offset = $$->runtime->offset + $$->width;
-                $$->runtime->offset += $$->width;
                 $$->symbol->type = $$->valType;
+                $$->symbol->complexType = $$->complexType;
             }
             | KW_STRUCT ID PushEnv LC RC {
                 /* get struct type `struct_id` */
@@ -376,7 +392,6 @@ StructDef   : KW_STRUCT ID PushEnv LC StructMemStmts RC {
                 $$->lexeme = $2->val;
                 $$->valType = "struct";
                 $$->valModifier = "default";
-                $$->complexType = "var";
                 $$->width = 4;
 
                 /* namespace runtime and register */
@@ -387,16 +402,14 @@ StructDef   : KW_STRUCT ID PushEnv LC StructMemStmts RC {
                 /* add struct id */
                 addSymbol(currRuntime, $$);
 
-                $$->symbol->offset = $$->runtime->offset + $$->width;
-                $$->runtime->offset += $$->width;
                 $$->symbol->type = $$->valType;
+                $$->symbol->complexType = $$->complexType;
             }
             ;
 
 /* variable */
 Var : ID {
         $$ = createNode(VAR, NULL, $1->line, level, 0);
-        $$->complexType = "var";
         $$->lexeme = $1->val;
         addSymbol(currRuntime, $$);
     }
@@ -431,7 +444,7 @@ Var : ID {
     }
     | LP Stars ID RP ArrayDims {
         $$ = createNode(VAR, NULL, $1->line, level, 0);
-        $$->valType = "arr_ptr";
+        $$->complexType = "arr_ptr";
         $$->lexeme = $3->val;
         $$->ptrStar = atoi($2->val);
         $$->arrayDim = $5;
@@ -439,7 +452,7 @@ Var : ID {
     }
     | Stars ID ArrayDims {
         $$ = createNode(VAR, NULL, $1->line, level, 0);
-        $$->valType = "_ptr_arr";
+        $$->complexType = "ptr_arr";
         $$->lexeme = $2->val;
         $$->ptrStar = atoi($1->val);
         $$->arrayDim = $3;
@@ -604,93 +617,7 @@ Args    : Exp {
 
 /* expression */
 /* TODO: assign exp left can not be int / float / char / string */
-Exp : Exp ASSIGN Exp {
-        $$ = createNode(ASSIGN, NULL, $1->line, level, 2, $1, $3);
-    }
-    | Exp PLUS Exp {
-        $$ = createNode(PLUS, NULL, $1->line, level, 2, $1, $3);
-    }
-    | Exp MINUS Exp {
-        $$ = createNode(MINUS, NULL, $1->line, level, 2, $1, $3);
-    }
-    | Exp STAR Exp {
-        $$ = createNode(MULTIPLY, NULL, $1->line, level, 2, $1, $3);
-    }
-    | Exp DIV Exp {
-        $$ = createNode(DIV, NULL, $1->line, level, 2, $1, $3);
-    }
-    | Exp DELIVERY Exp {
-        $$ = createNode(DELIVERY, NULL, $1->line, level, 2, $1, $3);
-    }
-    | Exp GREATER Exp {
-        $$ = createNode(GREATER, NULL, $1->line, level, 2, $1, $3);
-    }
-    | Exp SMALLER Exp {
-        $$ = createNode(SMALLER, NULL, $1->line, level, 2, $1, $3);
-    }
-    | Exp GREATER_EQUAL Exp {
-        $$ = createNode(GREATER_EQUAL, NULL, $1->line, level, 2, $1, $3);
-    }
-    | Exp SMALLER_EQUAL Exp {
-        $$ = createNode(SMALLER_EQUAL, NULL, $1->line, level, 2, $1, $3);
-    }
-    | Exp EQUAL Exp {
-        $$ = createNode(EQUAL, NULL, $1->line, level, 2, $1, $3);
-    }
-    | Exp NOT_EQUAL Exp {
-        $$ = createNode(NOT_EQUAL, NULL, $1->line, level, 2, $1, $3);
-    }
-    | Exp AND Exp {
-        $$ = createNode(AND, NULL, $1->line, level, 2, $1, $3);
-    }
-    | Exp OR Exp {
-        $$ = createNode(OR, NULL, $1->line, level, 2, $1, $3);
-    }
-    | Exp DOT Exp {
-        // specific for ID
-        $$ = createNode(DOT, NULL, $1->line, level, 2, $1, $3);
-    }
-    | Exp POINTER Exp {
-        // specific for ID
-        $$ = createNode(POINTER, NULL, $1->line, level, 2, $1, $3);
-    }
-    /* unary operator */
-    | MINUS Exp {
-        Node *node = createNode(INT, "0", $1->line, level, 0);
-        $$ = createNode(MINUS, NULL, $1->line, level, 2, node, $2);
-    }
-    | DPLUS Exp {
-        $$ = createNode(FDPLUS, NULL, $2->line, level, 1, $2);
-    }
-    | Exp DPLUS {
-        $$ = createNode(BDPLUS, NULL, $1->line, level, 1, $1);
-    }
-    | DMINUS Exp {
-        $$ = createNode(FDMINUS, NULL, $2->line, level, 1, $2);
-    }
-    | Exp DMINUS {
-        $$ = createNode(BDMINUS, NULL, $1->line, level, 1, $1);
-    }
-    | NOT Exp {
-        $$ = createNode(NOT, NULL, $2->line, level, 1, $2);
-    }
-    | LP Exp RP {
-        $$ = $1;
-    }
-    | ID LP Args RP {
-        $$ = createNode(FUNC_CALL, NULL, $1->line, level, 2, $1, $3);
-    }
-    | ID LP RP {
-        $$ = createNode(FUNC_CALL, NULL, $1->line, level, 1, $1);
-    }
-    | STAR ID {
-        $$ = createNode(GET_ADDR, NULL, $2->line, level, 1, $2);
-    }
-    | SAND ID {
-        $$ = createNode(GET_DATA, NULL, $2->line, level, 1, $2);
-    }
-    /* base type */
-    | INT {
+Exp : INT {
         $$ = $1;
     }
     | FLOAT {
@@ -704,6 +631,105 @@ Exp : Exp ASSIGN Exp {
     }
     | ID {
         $$ = $1;
+    }
+    | LP Type RP Exp {
+        $$ = createNode(TRANSFORM, NULL, $1->line, level, 1, $4);
+        $$->valType = $2;
+    }
+    | LP Type Stars RP Exp {
+        $$ = createNode(TRANSFORM, NULL, $1->line, level, 1, $5);
+        $$->valType = $2;
+        $$->ptrStar = atoi($3->val);
+        $$->complexType = "ptr";
+    }
+    | ID LP RP {
+        $$ = createNode(FUNC_CALL, NULL, $1->line, level, 1, $1);
+    }
+    | ID LP Args RP {
+        $$ = createNode(FUNC_CALL, NULL, $1->line, level, 2, $1, $3);
+    }
+    | Exp ASSIGN Exp {
+        $$ = createNode(ASSIGN, NULL, $1->line, level, 2, $1, $3);
+    }
+    | Exp OR Exp {
+        $$ = createNode(OR, NULL, $1->line, level, 2, $1, $3);
+    }
+    | Exp AND Exp {
+        $$ = createNode(AND, NULL, $1->line, level, 2, $1, $3);
+    }
+    | Exp NOT_EQUAL Exp {
+        $$ = createNode(NOT_EQUAL, NULL, $1->line, level, 2, $1, $3);
+    }
+    | Exp EQUAL Exp {
+        $$ = createNode(EQUAL, NULL, $1->line, level, 2, $1, $3);
+    }
+    | Exp SMALLER_EQUAL Exp {
+        $$ = createNode(SMALLER_EQUAL, NULL, $1->line, level, 2, $1, $3);
+    }
+    | Exp SMALLER Exp {
+        $$ = createNode(SMALLER, NULL, $1->line, level, 2, $1, $3);
+    }
+    | Exp GREATER_EQUAL Exp {
+        $$ = createNode(GREATER_EQUAL, NULL, $1->line, level, 2, $1, $3);
+    }
+    | Exp GREATER Exp {
+        $$ = createNode(GREATER, NULL, $1->line, level, 2, $1, $3);
+    }
+    | Exp MINUS Exp {
+        $$ = createNode(MINUS, NULL, $1->line, level, 2, $1, $3);
+    }
+    | Exp PLUS Exp {
+        $$ = createNode(PLUS, NULL, $1->line, level, 2, $1, $3);
+    }
+    | Exp DELIVERY Exp {
+        $$ = createNode(DELIVERY, NULL, $1->line, level, 2, $1, $3);
+    }
+    | Exp %prec MUL STAR Exp {
+        $$ = createNode(MULTIPLY, NULL, $1->line, level, 2, $1, $3);
+    }
+    | Exp DIV Exp {
+        $$ = createNode(DIV, NULL, $1->line, level, 2, $1, $3);
+    }
+    | NOT Exp {
+        $$ = createNode(NOT, NULL, $2->line, level, 1, $2);
+    }
+    | %prec GADDR SAND ID {
+        $$ = createNode(GET_ADDR, NULL, $2->line, level, 1, $2);
+    }
+    | %prec GDATA STAR ID {
+        $$ = createNode(GET_DATA, NULL, $2->line, level, 1, $2);
+    }
+    | DMINUS Exp {
+        $$ = createNode(FDMINUS, NULL, $2->line, level, 1, $2);
+    }
+    | Exp DMINUS { 
+        $$ = createNode(BDMINUS, NULL, $1->line, level, 1, $1);
+    }
+    | Exp DPLUS {
+        $$ = createNode(BDPLUS, NULL, $1->line, level, 1, $1);
+    }
+    | DPLUS Exp {
+        $$ = createNode(FDPLUS, NULL, $2->line, level, 1, $2);
+    }
+    | %prec SMINUS MINUS Exp {
+        Node *node = createNode(INT, "0", $1->line, level, 0);
+        $$ = createNode(MINUS, NULL, $1->line, level, 2, node, $2);
+    }
+    | Exp POINTER Exp {
+        // specific for ID
+        $$ = createNode(POINTER, NULL, $1->line, level, 2, $1, $3);
+    }
+    | Exp DOT Exp {
+        // specific for ID
+        $$ = createNode(DOT, NULL, $1->line, level, 2, $1, $3);
+    }
+    | LP Exp RP {
+        $$ = $1;
+    }
+    | Exp LB Exp RB {
+        // read array data
+        Node *assign = createNode(ASSIGN, NULL, $1->line, level, 2, $1, $3);
+        $$ = createNode(GET_DATA, NULL, $1->line, level, 1, assign);
     }
     ;
 
@@ -742,11 +768,11 @@ While   : KW_WHILE LP Exp RP StmtBlock {
 
 /* for */
 For : KW_FOR PrePushEnv LP ForStartStmt ForCondStmt ForIterExp RP StmtBlock {
-        $$ = createNode(FOR, NULL, $1->line, level, 4, $3, $4, $5, $7);
+        $$ = createNode(FOR, NULL, $1->line, level, 4, $4, $5, $6, $8);
         moveToPrevRuntime();
     }
     | KW_FOR PrePushEnv LP ForStartStmt ForCondStmt RP StmtBlock {
-        $$ = createNode(FOR, NULL, $1->line, level, 3, $3, $4, $6);
+        $$ = createNode(FOR, NULL, $1->line, level, 3, $4, $5, $7);
         moveToPrevRuntime();
     }
     ;

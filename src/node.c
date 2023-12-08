@@ -213,24 +213,6 @@ void printNode(Node *node, int depth, char *prefix)
     {
 
     // key word
-    case KW_CONST:
-        printf("KEY WORD:%s \033[32m(%d)\033[0m", "const", node->line);
-        break;
-    case KW_EXTERN:
-        printf("KEY WORD:%s \033[32m(%d)\033[0m", "extern", node->line);
-        break;
-    case KW_INT:
-        printf("KEY WORD:%s \033[32m(%d)\033[0m", "int", node->line);
-        break;
-    case KW_FLOAT:
-        printf("KEY WORD:%s \033[32m(%d)\033[0m", "float", node->line);
-        break;
-    case KW_CHAR:
-        printf("KEY WORD:%s \033[32m(%d)\033[0m", "char", node->line);
-        break;
-    case KW_VOID:
-        printf("KEY WORD:%s \033[32m(%d)\033[0m", "void", node->line);
-        break;
     case KW_RETURN:
         printf("KEY WORD:%s \033[32m(%d)\033[0m", "return", node->line);
         break;
@@ -446,6 +428,14 @@ void printNode(Node *node, int depth, char *prefix)
     case GET_DATA:
         printf("GET DATA \033[32m(%d)\033[0m", node->line);
         break;
+    case TRANSFORM:
+        printf("TRANSFORM \033[32m(%d)\033[0m", node->line);
+        printf("\n");
+        __printPrefix("*--", depth + 1);
+        printf("TYPE:%s\n", node->valType);
+        __printPrefix("*--", depth + 1);
+        printf("COMPLEX TYPE:%s\n", node->complexType);
+        break;
 
     // if else if else
     case IF:
@@ -521,39 +511,6 @@ void deleteNode(Node *node)
     }
 }
 
-int __calculateSpanDim(Node *dimNode, int width, int initializerSize, int depth)
-{
-    int spanDim = atoi(dimNode->val);
-    if (spanDim == 0)
-    {
-        // [] empty
-        if (dimNode->arrayDim != NULL)
-        {
-            // [][] empty
-            error(dimNode->line, ARRAY_INCOMPLETED);
-        }
-        if (initializerSize == 0)
-            return 1;
-        spanDim = initializerSize;
-    }
-    else
-    {
-        // [num]
-        if (dimNode->arrayDim != NULL)
-        {
-            spanDim = spanDim * __calculateSpanDim(dimNode->arrayDim, width, initializerSize / spanDim, depth + 1);
-        }
-    }
-    if (depth == 0)
-    {
-        return spanDim * width;
-    }
-    else
-    {
-        return spanDim;
-    }
-}
-
 void __analysisVar(Node *node, Node *specifier)
 {
     // node
@@ -568,46 +525,9 @@ void __analysisVar(Node *node, Node *specifier)
         // add value type
         node->valType = specifier->valType;
 
-        // get offset
-        if (node->ptrStar != 0)
-        {
-            node->width = 4;
-        }
-        else if (strstr(node->valType, "int"))
-        {
-            node->width = 4;
-        }
-        else if (strstr(node->valType, "float"))
-        {
-            node->width = 4;
-        }
-        else if (strstr(node->valType, "char"))
-        {
-            node->width = 1;
-        }
-        else if (strstr(node->valType, "void"))
-        {
-            node->width = 0;
-        }
-        else if (strstr(node->valType, "struct_"))
-        {
-            Runtime *runtime = findRuntimeByNamespace(structEnv, node->valType);
-            node->width = runtime->offset;
-        }
-        if (node->arrayDim != NULL)
-        {
-            int initializerSize = 0;
-            if (node->initializer != NULL)
-            {
-                initializerSize = node->initializer->numOfChildren;
-            }
-            node->width = __calculateSpanDim(node->arrayDim, node->width, initializerSize, 0);
-        }
-
-        // calculate offset and type
-        node->symbol->offset = node->runtime->offset + node->width;
-        node->runtime->offset += node->width;
+        // assign type
         node->symbol->type = node->valType;
+        node->symbol->complexType = node->complexType;
         break;
     }
     default:;

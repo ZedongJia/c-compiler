@@ -4,6 +4,7 @@
 #include <node.h>
 #include <runtime.h>
 #include <foutput.h>
+#include <code.h>
 
 extern int yylex(void);
 extern int yyparse(void);

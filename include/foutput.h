@@ -5,7 +5,8 @@
 
 // array errors
 #define ARRAY_INCOMPLETED "Incompleted array is not allowed!"
-
+#define VARIABLE_REDEFINED "Variable %s has already been defined!"
+#define VARIABLE_REDECLARED "Variable %s has already been declared!"
 
 void error(int line, const char* fmt, ...);
 
