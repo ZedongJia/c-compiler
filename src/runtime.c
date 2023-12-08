@@ -22,13 +22,14 @@ Symbol *createSymbol()
     symbol->offset = 0;
     symbol->isDefination = 0;
     symbol->pos = -1;
+    symbol->numOfArgs = 0;
     return symbol;
 }
 
 void addSymbol(Runtime *runtime, Node *var)
 {
     /**
-     * Lazy check, wait for dynamic analysis
+     * Ignore checking, wait for dynamic analysis
      */
     int hasFound = 0;
     // check
@@ -76,8 +77,7 @@ void addSymbol(Runtime *runtime, Node *var)
     var->symbol = symbol;
 }
 
-// global methods
-
+// env methods
 void initEnv()
 {
     env = (Environment *)malloc(sizeof(Environment));
@@ -132,6 +132,7 @@ void moveToPrevRuntime()
     currRuntime = currRuntime->prev;
 }
 
+/* Symbol related methods */
 void deleteEnv()
 {
     for (int i = 0; i < env->size; i++)
@@ -146,47 +147,56 @@ void deleteSymbol(Runtime *runtime, int pos)
     for (int i = pos; i < runtime->numOfSymbols - 1; i++)
     {
         runtime->symbols[i] = runtime->symbols[i + 1];
-        runtime->symbols[i]->pos = i - 1;
+        runtime->symbols[i]->pos--;
     }
     runtime->numOfSymbols--;
 }
 
 int lookAheadDefination(Runtime *runtime, Symbol *symbol)
 {
-    int pos = symbol->pos;
+    int pos = symbol->pos - 1;
     for (int i = pos; i >= 0; i--)
     {
         if (runtime->symbols[i]->isDefination == 1 && strcmp(symbol->lexeme, runtime->symbols[i]->lexeme) == 0)
         {
             return 1;
         }
+        if (runtime->symbols[i]->isDefination == 0)
+        {
+            runtime->symbols[i]->isDefination = 1;
+        }
     }
-    return -1;
+    return 0;
 }
 
+/* Print for Debug */
 void printRuntime(Runtime *runtime)
 {
-    for (int i = 0; i < 79; i++)
+    for (int i = 0; i < 106; i++)
         printf("-");
     printf("\n");
-    printf("| %10s | %15s | %15s | %6s | %5s | %9s |\n",
+    printf("| %10s | %15s | %15s | %6s | %5s | %9s | %12s | %9s |\n",
            "Lexeme",
            "Complex Type",
            "Type", "Offset",
            "Line",
-           "duplicate");
-    for (int i = 0; i < 79; i++)
+           "duplicate",
+           "isDefination",
+           "numOfArgs");
+    for (int i = 0; i < 106; i++)
         printf("-");
     printf("\n");
     for (int i = 0; i < runtime->numOfSymbols; i++)
         printf(
-            "| %10s | %15s | %15s | %6d | %5d | %9d |\n",
+            "| %10s | %15s | %15s | %6d | %5d | %9d | %12d | %9d |\n",
             runtime->symbols[i]->lexeme,
             runtime->symbols[i]->complexType,
             runtime->symbols[i]->type,
             runtime->symbols[i]->offset,
             runtime->symbols[i]->line,
-            runtime->symbols[i]->duplicate);
+            runtime->symbols[i]->duplicate,
+            runtime->symbols[i]->isDefination,
+            runtime->symbols[i]->numOfArgs);
 }
 
 void printEnv()

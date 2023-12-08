@@ -31,8 +31,8 @@ typedef struct Code
     /* data */
     int line;
     int op;     // opt
-    char *arg1; // addr, value, (signal)
-    char *arg2; // addr, value, (signal)
+    char *arg1; // addr, value, (line)
+    char *arg2; // addr, value, (line)
 } Code;
 
 typedef struct CodeManager
@@ -46,11 +46,20 @@ typedef struct CodeManager
 
 CodeManager *manager;
 
+// sparate it to stmts level, stmt level and var level
+void __dealStmts(Node *stmts);
+
+void __dealStmt(Node *stmt, int isGlobal);
+
+int __dealVar(Node *var, int isGlobal, int isDeclare);
+
+// main process entry
+void generateCode(Node *node);
+
+// code structure and code manager utils
 void initCodeManager();
 
 Code *createCode(int line, int op, char *arg1, char *arg2);
-
-void generateCode(Node *node);
 
 void deleteCode(Code *code);
 

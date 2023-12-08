@@ -17,14 +17,14 @@ int main(int argc, char const *argv[])
     printNode(astTree, 0, NULL);
 
     // codemanager
-    // initCodeManager();
-    // generateCode(astTree);
+    initCodeManager();
+    generateCode(astTree);
 
-    // printCodeManager();
-    // deleteCodeManager();
+    printCodeManager();
+    deleteCodeManager();
 
     // env control
-    // printEnv();
+    printEnv();
     deleteEnv();
 
     // finally delete node

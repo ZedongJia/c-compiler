@@ -94,7 +94,7 @@ void prependNode(Node *node, Node *child)
     // assign
     node->children = children;
     node->line = child->line;
-    // ++
+    // increment
     node->numOfChildren++;
 }
 

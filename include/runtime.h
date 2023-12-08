@@ -17,6 +17,7 @@ typedef struct Symbol
     int line;          // first get
     int offset;        // second get
     int duplicate;     // first get
+    int numOfArgs;     // numOfArg
 } Symbol;
 
 typedef struct Runtime

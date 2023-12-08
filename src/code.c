@@ -4,6 +4,10 @@
 int __calculateSpanDim(Node *dimNode, int width, int initializerSize, int depth)
 {
     int spanDim = atoi(dimNode->val);
+    if (depth == 0 && spanDim == 0)
+    {
+        return 4;
+    }
     if (spanDim == 0)
     {
         // [] empty
@@ -13,8 +17,9 @@ int __calculateSpanDim(Node *dimNode, int width, int initializerSize, int depth)
             error(dimNode->line, ARRAY_INCOMPLETED);
         }
         if (initializerSize == 0)
-            return 1;
-        spanDim = initializerSize;
+            spanDim = 1;
+        else
+            spanDim = initializerSize;
     }
     else
     {
@@ -36,6 +41,7 @@ int __calculateSpanDim(Node *dimNode, int width, int initializerSize, int depth)
 
 void __getOffset(Node *node)
 {
+    // DEBUG: printf("runtime:%s, level:%d, offset:%d\n", node->runtime->namespace, node->runtime->level, node->runtime->offset);
     /* node should be var */
 
     // get offset
@@ -114,8 +120,9 @@ Code *createCode(int line, int op, char *arg1, char *arg2)
  * dec -> 1
  */
 
-void __dealVar(Node *var, int isGlobal, int isDeclare)
+int __dealVar(Node *var, int isGlobal, int isDeclare)
 {
+    int varCnt = 1;
     /**
      * --VAR
      * ---*property
@@ -131,38 +138,40 @@ void __dealVar(Node *var, int isGlobal, int isDeclare)
      */
     if (isGlobal == 1)
     {
-        // 区分定义、声明
+        // distinguish declare and defination
         if (isDeclare == 1)
         {
-            // 声明
+            // declare
             if (var->symbol->duplicate == 1)
             {
-                // 重复, 移除 var 声明
+                // duplicate, remove variable declaration
                 deleteSymbol(var->runtime, var->symbol->pos);
             }
             else
             {
-                // 不重复, 计算偏移量
+                // do not duplicate, calculate offset
                 __getOffset(var);
                 var->symbol->isDefination = 0;
             }
         }
         else
         {
-            // 定义
+            // defination
             if (var->symbol->duplicate == 1)
             {
-                // 重复, 向前查找是否已定义
+                // duplicate, find the redefination from the front symbols
+                // if meet declaration, set isDefination = 1 (first succeed, second will fail)
                 int hasDefinated = lookAheadDefination(var->runtime, var->symbol);
                 if (hasDefinated)
                 {
+                    // yes
                     error(var->line, VARIABLE_REDEFINED, var->lexeme);
                 }
                 deleteSymbol(var->runtime, var->symbol->pos);
             }
             else
             {
-                // 不重复
+                // do not duplicate
                 __getOffset(var);
                 var->symbol->isDefination = 1;
             }
@@ -170,53 +179,232 @@ void __dealVar(Node *var, int isGlobal, int isDeclare)
     }
     else
     {
-        // 不区分定义、声明
+        // do not distinguish declare and defination
         if (var->symbol->duplicate == 1)
         {
-            // 找到重复定义
+            // redefination
             deleteSymbol(var->runtime, var->symbol->pos);
             error(var->line, VARIABLE_REDECLARED, var->lexeme);
         }
         else
         {
-            // 设置定义
+            // set defination
             __getOffset(var);
         }
     }
     for (int i = 0; i < var->numOfChildren; i++)
     {
-        __dealVar(var->children[i], isGlobal, isDeclare);
+        // deal with next variable, and add it to varCnt
+        varCnt += __dealVar(var->children[i], isGlobal, isDeclare);
+    }
+    return varCnt;
+}
+
+void __dealStmts(Node *stmts)
+{
+    /**
+     * node can be -> program, statments, expression, ...
+     */
+    switch (stmts->type)
+    {
+    case PROGRAM:
+        /**
+         * PROGRAM
+         * --VAR_DEF
+         * --VAR_DEC
+         * --FUNC_DEF
+         * --FUNC_DEC
+         * --STRUCT_DEF
+         */
+        for (int i = 0; i < stmts->numOfChildren; i++)
+        {
+            __dealStmt(stmts->children[i], 1);
+        }
+        break;
+    case STMTS:
+        /**
+         * STMTS
+         * --VAR_DEF
+         * --VAR_DEC
+         * --STMT (IF, WHILE, FOR, Exp...)
+         */
+        for (int i = 0; i < stmts->numOfChildren; i++)
+        {
+            __dealStmt(stmts->children[i], 0);
+        }
+        break;
+    default:
+        break;
     }
 }
 
 void __dealStmt(Node *stmt, int isGlobal)
 {
-    /**
-     * 有重复，向前找, 有定义则报错，放弃该定义。有声明则放弃该定义
-     * 无重复，pass
-     * 设置该位置symbol为defination
-     * 计算offset
-     */
     switch (stmt->type)
     {
     case VAR_DEF:
-        /* code */
+    { /**
+       * VAR_DEF
+       * --VAR
+       * -----*property
+       * -----VAR
+       */
+        __dealVar(stmt->children[0], isGlobal, 0);
         break;
+    }
     case FUNC_DEF:
+    { /**
+       * FUNC_DEF
+       * --VAR
+       * --ARG_DEC (?)
+       * --STMTS (?)
+       */
+        Node *var = stmt->children[0];
+        __dealVar(var, isGlobal, 0);
+        int numOfArgs = 0;
+        if (stmt->numOfChildren > 1)
+        {
+            if (stmt->children[1]->type == ARG_DEC)
+            {
+                // ARG_DEC
+                numOfArgs = __dealVar(stmt->children[1]->children[0], 0, 1);
+            }
+            else
+            {
+                // STMTS
+                __dealStmts(stmt->children[1]);
+            }
+        }
+        if (stmt->numOfChildren > 2)
+        {
+            // STMTS
+            __dealStmts(stmt->children[2]);
+        }
+        var->symbol->numOfArgs = numOfArgs;
         break;
+    }
     case STRUCT_DEF:
+    { /**
+       * STRUCT_DEF
+       * --*property
+       * --STMTS (?)
+       * --VAR_DEF/VAR_DEC (?)
+       */
+        __getOffset(stmt);
+        if (stmt->numOfChildren > 0)
+        {
+            if (stmt->children[0]->type == STMTS)
+            {
+                // STMTS
+                __dealStmts(stmt->children[0]);
+            }
+            else
+            {
+                // VAR_DEF or VAR_DEC
+                __dealStmt(stmt->children[0], 0);
+            }
+        }
+        if (stmt->numOfChildren > 1)
+        {
+            // VAR_DEF or VAR_DEC
+            __dealStmt(stmt->children[1], 0);
+        }
         break;
+    }
     case VAR_DEC:
-        /* code */
+    { /**
+       * VAR_DEC
+       * --VAR
+       * -----*property
+       * -----VAR
+       */
+        __dealVar(stmt->children[0], isGlobal, 1);
         break;
+    }
     case FUNC_DEC:
+    { /**
+       * FUNC_DEC
+       * --VAR
+       * --ARG_DEC (?)
+       */
+        Node *var = stmt->children[0];
+        __dealVar(var, isGlobal, 1);
+        int numOfArgs = 0;
+        if (stmt->numOfChildren > 1)
+        {
+            // ARG_DEC
+            numOfArgs = __dealVar(stmt->children[1]->children[0], 0, 1);
+        }
+        var->symbol->numOfArgs = numOfArgs;
         break;
+    }
     case FOR:
+    { /**
+       * FOR
+       * --FOR_START_STMT (deslStmt)
+       * --FOR_COND_STMT  (dealStmt)
+       * --FOR_ITER_EXP   (dealExp )
+       */
+        for (int i = 0; i < stmt->numOfChildren; i++)
+            __dealStmt(stmt->children[i], 0);
         break;
+    }
+    case FOR_START_STMT:
+    { /**
+       * FOR_START_STMT
+       * --VAR_DEF / Exp (?)
+       */
+        if (stmt->numOfChildren > 0)
+        {
+            __dealStmt(stmt->children[0], 0);
+        }
+        break;
+    }
+    case FOR_COND_STMT:
+    { /**
+       * FOR_COND_STMT
+       * --Exp (?)
+       */
+        if (stmt->numOfChildren > 0)
+        {
+            __dealStmt(stmt->children[0], 0);
+        }
+        break;
+    }
     case IF:
+    { /**
+       * IF
+       * --Exp
+       * --STMTS
+       * --ELSE (?)
+       */
+        __dealStmt(stmt->children[0], 0);
+        __dealStmts(stmt->children[1]);
+        if (stmt->numOfChildren > 2)
+        {
+            // ELSE
+            __dealStmt(stmt->children[2], 0);
+        }
         break;
+    }
+    case ELSE:
+    { /**
+       * ELSE
+       * --STMTS
+       */
+        __dealStmts(stmt->children[0]);
+        break;
+    }
     case WHILE:
+    { /**
+       * WHILE
+       * --Exp
+       * --STMTS
+       */
+        __dealStmt(stmt->children[0], 0);
+        __dealStmts(stmt->children[1]);
         break;
+    }
     default:;
     }
 }
@@ -224,25 +412,9 @@ void __dealStmt(Node *stmt, int isGlobal)
 void generateCode(Node *node)
 {
     /**
-     * node can be -> program, stmts, exp...
+     * Process `prog` to `middle code` as well as code `static` and `dynamic` check
      */
-    switch (node->type)
-    {
-    case PROGRAM:
-        for (int i = 0; i < node->numOfChildren; i++)
-        {
-            __dealStmt(node->children[i], 1);
-        }
-        break;
-    case STMTS:
-        for (int i = 0; i < node->numOfChildren; i++)
-        {
-            __dealStmt(node->children[i], 0);
-        }
-        break;
-    default:
-        break;
-    }
+    __dealStmts(node);
 }
 
 void deleteCode(Code *code)

@@ -1,13 +1,21 @@
-
-
+// int a;
+// int a;
+// int a = 6;
+int tesss(int a, char b, char *c, int *d, int arr[]);
 int main(int argc, char const *argv[])
 {
     int *a = (int *)malloc(5);
-    char *a;
     a[5] = 6;
     for (int i = 0; i < 5; i++)
     {
         printf("%d", i);
+    }
+    for (;;);
+    if (a == 5)
+    {
+        a[4] = 6;
+    } else {
+        a[4] = 1;
     }
     return 0;
 }
