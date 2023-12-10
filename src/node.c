@@ -428,6 +428,9 @@ void printNode(Node *node, int depth, char *prefix)
     case GET_DATA:
         printf("GET DATA \033[32m(%d)\033[0m", node->line);
         break;
+    case GET_ARRAY_DATA:
+        printf("GET ARRAY DATA \033[32m(%d)\033[0m", node->line);
+        break;
     case TRANSFORM:
         printf("TRANSFORM \033[32m(%d)\033[0m", node->line);
         printf("\n");

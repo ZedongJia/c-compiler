@@ -24,7 +24,7 @@ int main(int argc, char const *argv[])
     deleteCodeManager();
 
     // env control
-    printEnv();
+    // printEnv();
     deleteEnv();
 
     // finally delete node

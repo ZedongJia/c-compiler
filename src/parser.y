@@ -70,7 +70,7 @@
 %token STMTS STMT
 
 /* exp */
-%token GET_ADDR GET_DATA
+%token GET_ADDR GET_DATA GET_ARRAY_DATA
 
 /* return */
 %token RETURN
@@ -417,7 +417,7 @@ Var : ID {
     }
     | ID ArrayDims {
         $$ = createNode(VAR, NULL, $1->line, level, 0);
-        $$->complexType = "arr";
+        $$->complexType = "ptr_const";
         $$->lexeme = $1->val;
         $$->arrayDim = $2;
         addSymbol(currRuntime, $$);
@@ -438,7 +438,7 @@ Var : ID {
     }
     | LP Stars ID ArrayDims RP {
         $$ = createNode(VAR, NULL, $1->line, level, 0);
-        $$->complexType = "ptr_arr";
+        $$->complexType = "ptr";
         $$->lexeme = $3->val;
         $$->ptrStar = atoi($2->val);
         $$->arrayDim = $4;
@@ -446,7 +446,7 @@ Var : ID {
     }
     | LP Stars ID RP ArrayDims {
         $$ = createNode(VAR, NULL, $1->line, level, 0);
-        $$->complexType = "arr_ptr";
+        $$->complexType = "ptr";
         $$->lexeme = $3->val;
         $$->ptrStar = atoi($2->val);
         $$->arrayDim = $5;
@@ -736,8 +736,7 @@ Exp : INT {
     }
     | Exp LB Exp RB {
         // read array data
-        Node *assign = createNode(ASSIGN, NULL, $1->line, level, 2, $1, $3);
-        $$ = createNode(GET_DATA, NULL, $1->line, level, 1, assign);
+        $$ = createNode(GET_ARRAY_DATA, NULL, $1->line, level, 2, $1, $3);
     }
     ;
 

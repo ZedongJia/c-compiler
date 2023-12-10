@@ -5,70 +5,97 @@ void printOp(int op)
     switch (op)
     {
     case C_PLUS:
-        printf("%5s", "+");
+        printf("%10s", "+");
         break;
     case C_MINUS:
-        printf("%5s", "-");
+        printf("%10s", "-");
         break;
     case C_MULIPLY:
-        printf("%5s", "*");
+        printf("%10s", "*");
         break;
     case C_DIVIDER:
-        printf("%5s", "/");
+        printf("%10s", "/");
         break;
     case C_DELIVERY:
-        printf("%5s", "%");
+        printf("%10s", "%");
         break;
     case C_NOT:
-        printf("%5s", "!");
+        printf("%10s", "!");
         break;
     case C_AND:
-        printf("%5s", "&&");
+        printf("%10s", "&&");
         break;
     case C_OR:
-        printf("%5s", "||");
+        printf("%10s", "||");
         break;
     case C_GREATER:
-        printf("%5s", ">");
+        printf("%10s", ">");
         break;
     case C_SMALLER:
-        printf("%5s", "<");
+        printf("%10s", "<");
         break;
     case C_GREATER_EQUAL:
-        printf("%5s", ">=");
+        printf("%10s", ">=");
         break;
     case C_SMALLER_EQUAL:
-        printf("%5s", "<=");
+        printf("%10s", "<=");
         break;
     case C_EQUAL:
-        printf("%5s", "==");
+        printf("%10s", "==");
         break;
     case C_NOT_EQUAL:
-        printf("%5s", "!=");
+        printf("%10s", "!=");
         break;
     case C_ASSIGN:
-        printf("%5s", "=");
+        printf("%10s", "=");
         break;
     case C_INT:
-        printf("%5s", "int");
+        printf("%10s", "int");
         break;
     case C_FLOAT:
-        printf("%5s", "float");
+        printf("%10s", "float");
         break;
     case C_CHAR:
-        printf("%5s", "char");
+        printf("%10s", "char");
         break;
     case C_GET_DATA:
-        printf("%5s", "*");
+        printf("%10s", "*");
         break;
     case C_GET_ADDR:
-        printf("%5s", "&");
+        printf("%10s", "&");
         break;
     case C_CALL:
-        printf("%5s", "call");
+        printf("%10s", "call");
         break;
     case C_PARAM:
-        printf("%5s", "param");
+        printf("%10s", "param");
+        break;
+    case C_JF:
+        printf("%10s", "JFalse");
+        break;
+    case C_J:
+        printf("%10s", "Jump");
+        break;
+    case C_EXIT:
+        printf("%10s", "exit");
+        break;
+    case C_RETURN:
+        printf("%10s", "return");
+        break;
+    case C_FUNC:
+        printf("%10s", "func");
+        break;
+    case C_END_FUNC:
+        printf("%10s", "end func");
+        break;
+    case C_STRUCT:
+        printf("%10s", "struct");
+        break;
+    case C_END_STRUCT:
+        printf("%10s", "end struct");
+        break;
+    case C_DEF:
+        printf("%10s", "def");
         break;
     default:
         break;
@@ -213,7 +240,7 @@ int addCode(int op, char *arg1, char *arg2)
  * dec -> 1
  */
 
-int __dealVar(Node *var, int isGlobal, int isDeclare)
+int __dealVar(Node *var, int isGlobal, int isDeclare, int genCode)
 {
     int varCnt = 1;
     /**
@@ -283,12 +310,18 @@ int __dealVar(Node *var, int isGlobal, int isDeclare)
         {
             // set defination
             __getOffset(var);
+            if (genCode == 1)
+            {
+                char *width = (char *)malloc(sizeof(char) * 4);
+                itoa(var->width, width, 10);
+                addCode(C_DEF, var->lexeme, width);
+            }
         }
     }
     for (int i = 0; i < var->numOfChildren; i++)
     {
         // deal with next variable, and add it to varCnt
-        varCnt += __dealVar(var->children[i], isGlobal, isDeclare);
+        varCnt += __dealVar(var->children[i], isGlobal, isDeclare, genCode);
     }
     return varCnt;
 }
@@ -342,7 +375,7 @@ void __dealStmt(Node *stmt, int isGlobal)
        * -----*property
        * -----VAR
        */
-        __dealVar(stmt->children[0], isGlobal, 0);
+        __dealVar(stmt->children[0], isGlobal, 0, 1);
         break;
     }
     case FUNC_DEF:
@@ -353,14 +386,16 @@ void __dealStmt(Node *stmt, int isGlobal)
        * --STMTS (?)
        */
         Node *var = stmt->children[0];
-        __dealVar(var, isGlobal, 0);
+        __dealVar(var, isGlobal, 0, 0);
+
+        addCode(C_FUNC, var->lexeme, NULL);
         int numOfArgs = 0;
         if (stmt->numOfChildren > 1)
         {
             if (stmt->children[1]->type == ARG_DEC)
             {
                 // ARG_DEC
-                numOfArgs = __dealVar(stmt->children[1]->children[0], 0, 1);
+                numOfArgs = __dealVar(stmt->children[1]->children[0], 0, 1, 0);
             }
             else
             {
@@ -374,6 +409,7 @@ void __dealStmt(Node *stmt, int isGlobal)
             __dealStmts(stmt->children[2]);
         }
         var->symbol->numOfArgs = numOfArgs;
+        addCode(C_END_FUNC, NULL, NULL);
         break;
     }
     case STRUCT_DEF:
@@ -383,6 +419,7 @@ void __dealStmt(Node *stmt, int isGlobal)
        * --STMTS (?)
        * --VAR_DEF/VAR_DEC (?)
        */
+        addCode(C_STRUCT, stmt->lexeme, NULL);
         __getOffset(stmt);
         if (stmt->numOfChildren > 0)
         {
@@ -390,17 +427,23 @@ void __dealStmt(Node *stmt, int isGlobal)
             {
                 // STMTS
                 __dealStmts(stmt->children[0]);
+                addCode(C_END_STRUCT, NULL, NULL);
             }
             else
             {
+                addCode(C_END_STRUCT, NULL, NULL);
                 // VAR_DEF or VAR_DEC
-                __dealStmt(stmt->children[0], 0);
+                __dealStmt(stmt->children[0], 1);
             }
+        }
+        else
+        {
+            addCode(C_END_STRUCT, NULL, NULL);
         }
         if (stmt->numOfChildren > 1)
         {
             // VAR_DEF or VAR_DEC
-            __dealStmt(stmt->children[1], 0);
+            __dealStmt(stmt->children[1], 1);
         }
         break;
     }
@@ -411,7 +454,7 @@ void __dealStmt(Node *stmt, int isGlobal)
        * -----*property
        * -----VAR
        */
-        __dealVar(stmt->children[0], isGlobal, 1);
+        __dealVar(stmt->children[0], isGlobal, 1, 1);
         break;
     }
     case FUNC_DEC:
@@ -421,12 +464,12 @@ void __dealStmt(Node *stmt, int isGlobal)
        * --ARG_DEC (?)
        */
         Node *var = stmt->children[0];
-        __dealVar(var, isGlobal, 1);
+        __dealVar(var, isGlobal, 1, 0);
         int numOfArgs = 0;
         if (stmt->numOfChildren > 1)
         {
             // ARG_DEC
-            numOfArgs = __dealVar(stmt->children[1]->children[0], 0, 1);
+            numOfArgs = __dealVar(stmt->children[1]->children[0], 0, 1, 0);
         }
         var->symbol->numOfArgs = numOfArgs;
         break;
@@ -437,10 +480,41 @@ void __dealStmt(Node *stmt, int isGlobal)
        * --FOR_START_STMT (deslStmt)
        * --FOR_COND_STMT  (dealStmt)
        * --FOR_ITER_EXP   (dealExp )
+       * **need transform to code
        */
-        for (int i = 0; i < stmt->numOfChildren; i++)
-            __dealStmt(stmt->children[i], 0);
-        break;
+        Node *start = stmt->children[0];
+        __dealStmt(start, 0);
+        Node *cond = stmt->children[1];
+        int condStartLine = manager->line;
+        __dealStmt(cond, 0);
+        int condEndLine = manager->line - 1;
+        int condCode;
+        if (condEndLine != condStartLine - 1)
+        {
+            // make cond code, record jump cond code
+            char *sign = (char *)malloc(sizeof(char) * (8));
+            sprintf(sign, "(%d)", condEndLine);
+            condCode = addCode(C_JF, sign, NULL);
+        }
+        if (stmt->numOfChildren > 3)
+        {
+            // has iter
+            __dealStmts(stmt->children[3]);
+            __dealExp(stmt->children[2]);
+        }
+        else
+        {
+            // do not has iter
+            __dealStmts(stmt->children[2]);
+        }
+        // add loop
+        char *sign = (char *)malloc(sizeof(char) * (8));
+        sprintf(sign, "(%d)", condStartLine);
+        addCode(C_J, sign, NULL);
+        // fill jump place
+        sign = (char *)malloc(sizeof(char) * (8));
+        sprintf(sign, "(%d)", manager->line);
+        manager->codeList[condCode]->arg2 = sign;
     }
     case FOR_START_STMT:
     { /**
@@ -470,14 +544,33 @@ void __dealStmt(Node *stmt, int isGlobal)
        * --Exp
        * --STMTS
        * --ELSE (?)
+       * **need transform to code
        */
         __dealStmt(stmt->children[0], 0);
+        int condEndLine = manager->line - 1;
+        int condCode = -1;
+        int finishCode = -1;
+        // add jump code, record jump cond code
+        char *sign = (char *)malloc(sizeof(char) * (8));
+        sprintf(sign, "(%d)", condEndLine);
+        condCode = addCode(C_JF, sign, NULL);
         __dealStmts(stmt->children[1]);
+        // add if finish code
+        finishCode = addCode(C_J, NULL, NULL);
+
+        // fill jump place
+        sign = (char *)malloc(sizeof(char) * (8));
+        sprintf(sign, "(%d)", manager->line);
+        manager->codeList[condCode]->arg2 = sign;
         if (stmt->numOfChildren > 2)
         {
             // ELSE
             __dealStmt(stmt->children[2], 0);
         }
+        // add finish jump code
+        sign = (char *)malloc(sizeof(char) * (8));
+        sprintf(sign, "(%d)", manager->line);
+        manager->codeList[finishCode]->arg1 = sign;
         break;
     }
     case ELSE:
@@ -493,10 +586,43 @@ void __dealStmt(Node *stmt, int isGlobal)
        * WHILE
        * --Exp
        * --STMTS
+       * **need transform to code
        */
+        int condStartLine = manager->line;
         __dealStmt(stmt->children[0], 0);
+        int condEndLine = manager->line - 1;
+        int condCode = -1;
+        // add jump code, record jump cond code
+        char *sign = (char *)malloc(sizeof(char) * (8));
+        sprintf(sign, "(%d)", condEndLine);
+        condCode = addCode(C_JF, sign, NULL);
         __dealStmts(stmt->children[1]);
+        // add loop
+        sign = (char *)malloc(sizeof(char) * (8));
+        sprintf(sign, "(%d)", condStartLine);
+        addCode(C_J, sign, NULL);
+        // fill jump code
+        sign = (char *)malloc(sizeof(char) * (8));
+        sprintf(sign, "(%d)", manager->line);
+        manager->codeList[condCode]->arg2 = sign;
         break;
+    }
+    case RETURN:
+    {
+        /**
+         * RETURN
+         * --Exp (?)
+         */
+        if (stmt->numOfChildren > 0)
+        {
+            ExpVal *rtVal = __dealExp(stmt->children[0]);
+            addCode(C_RETURN, rtVal->val, NULL);
+            free(rtVal);
+        }
+        else
+        {
+            addCode(C_RETURN, NULL, NULL);
+        }
     }
     default:
     {
@@ -528,7 +654,7 @@ ExpVal *__dealExp(Node *exp)
     }
     case ID:
     {
-        ExpVal *expVal = createExpVal("id", NULL, exp->val);
+        ExpVal *expVal = createExpVal("addr", NULL, exp->val);
         // normal variable
         Symbol *syb = lookup(exp->runtime, exp->val, 1);
         if (syb == NULL)
@@ -605,7 +731,7 @@ ExpVal *__dealExp(Node *exp)
                 error(exp->line, MORE_ARGUMENTS_ERROR);
             }
             // set argument
-            for (int i = 0; i < args->numOfChildren; i++)
+            for (int i = 0; i < args->numOfChildren && i < syb->numOfArgs; i++)
             {
                 ExpVal *arg = __dealExp(args->children[i]);
                 int line = addCode(C_PARAM, arg->val, NULL);
@@ -617,7 +743,7 @@ ExpVal *__dealExp(Node *exp)
         }
         char *numOfArgs = (char *)malloc(sizeof(char) * 2);
         itoa(syb->numOfArgs, numOfArgs, 10);
-        int line = addCode(C_CALL, numOfArgs, id->val);
+        int line = addCode(C_CALL, id->val, numOfArgs);
         char *sign = (char *)malloc(sizeof(char) * (8));
         sprintf(sign, "(%d)", line);
         ExpVal *rt = createExpVal("id", syb->type, sign);
@@ -632,7 +758,7 @@ ExpVal *__dealExp(Node *exp)
        */
         ExpVal *arg1 = __dealExp(exp->children[1]);
         ExpVal *arg2 = __dealExp(exp->children[0]);
-        if (strcmp(arg2->type, "id") != 0)
+        if (strcmp(arg2->type, "addr") != 0)
         {
             /**
              * Ignore the assign exp
@@ -650,12 +776,6 @@ ExpVal *__dealExp(Node *exp)
                 free(arg2);
                 return arg1;
             }
-        }
-        else if (arg2->complexType != NULL && arg1->complexType == NULL)
-        {
-            error(exp->line, ASSIGE_COMPLEX_TYPE_ERROR, arg1->ptrStar, "ptr", arg2->ptrStar, arg2->complexType);
-            free(arg2);
-            return arg1;
         }
         else if (arg2->complexType == NULL && arg1->complexType != NULL)
         {
@@ -703,7 +823,7 @@ ExpVal *__dealExp(Node *exp)
                 __dealCast(exp->line, arg2->valType, arg1, OPERATOR_TYPE_ERROR);
             }
         }
-        int line = addCode(C_OR, arg1->val, arg2->val);
+        int line = addCode(C_OR, arg2->val, arg1->val);
         char *sign = (char *)malloc(sizeof(char) * (8));
         sprintf(sign, "(%d)", line);
         ExpVal *orVal = createExpVal(arg2->valType, arg2->valType, sign);
@@ -733,7 +853,7 @@ ExpVal *__dealExp(Node *exp)
                 __dealCast(exp->line, arg2->valType, arg1, OPERATOR_TYPE_ERROR);
             }
         }
-        int line = addCode(C_AND, arg1->val, arg2->val);
+        int line = addCode(C_AND, arg2->val, arg1->val);
         char *sign = (char *)malloc(sizeof(char) * (8));
         sprintf(sign, "(%d)", line);
         ExpVal *andVal = createExpVal(arg2->valType, arg2->valType, sign);
@@ -764,7 +884,7 @@ ExpVal *__dealExp(Node *exp)
                 __dealCast(exp->line, arg2->valType, arg1, OPERATOR_TYPE_ERROR);
             }
         }
-        int line = addCode(C_NOT_EQUAL, arg1->val, arg2->val);
+        int line = addCode(C_NOT_EQUAL, arg2->val, arg1->val);
         char *sign = (char *)malloc(sizeof(char) * (8));
         sprintf(sign, "(%d)", line);
         ExpVal *notEqualVal = createExpVal(arg2->valType, arg2->valType, sign);
@@ -795,7 +915,7 @@ ExpVal *__dealExp(Node *exp)
                 __dealCast(exp->line, arg2->valType, arg1, OPERATOR_TYPE_ERROR);
             }
         }
-        int line = addCode(C_EQUAL, arg1->val, arg2->val);
+        int line = addCode(C_EQUAL, arg2->val, arg1->val);
         char *sign = (char *)malloc(sizeof(char) * (8));
         sprintf(sign, "(%d)", line);
         ExpVal *equalVal = createExpVal(arg2->valType, arg2->valType, sign);
@@ -826,7 +946,7 @@ ExpVal *__dealExp(Node *exp)
                 __dealCast(exp->line, arg2->valType, arg1, OPERATOR_TYPE_ERROR);
             }
         }
-        int line = addCode(C_SMALLER_EQUAL, arg1->val, arg2->val);
+        int line = addCode(C_SMALLER_EQUAL, arg2->val, arg1->val);
         char *sign = (char *)malloc(sizeof(char) * (8));
         sprintf(sign, "(%d)", line);
         ExpVal *smallerEqualVal = createExpVal(arg2->valType, arg2->valType, sign);
@@ -857,7 +977,7 @@ ExpVal *__dealExp(Node *exp)
                 __dealCast(exp->line, arg2->valType, arg1, OPERATOR_TYPE_ERROR);
             }
         }
-        int line = addCode(C_SMALLER, arg1->val, arg2->val);
+        int line = addCode(C_SMALLER, arg2->val, arg1->val);
         char *sign = (char *)malloc(sizeof(char) * (8));
         sprintf(sign, "(%d)", line);
         ExpVal *smallerVal = createExpVal(arg2->valType, arg2->valType, sign);
@@ -888,7 +1008,7 @@ ExpVal *__dealExp(Node *exp)
                 __dealCast(exp->line, arg2->valType, arg1, OPERATOR_TYPE_ERROR);
             }
         }
-        int line = addCode(C_GREATER_EQUAL, arg1->val, arg2->val);
+        int line = addCode(C_GREATER_EQUAL, arg2->val, arg1->val);
         char *sign = (char *)malloc(sizeof(char) * (8));
         sprintf(sign, "(%d)", line);
         ExpVal *greaterEqualVal = createExpVal(arg2->valType, arg2->valType, sign);
@@ -919,7 +1039,7 @@ ExpVal *__dealExp(Node *exp)
                 __dealCast(exp->line, arg2->valType, arg1, OPERATOR_TYPE_ERROR);
             }
         }
-        int line = addCode(C_GREATER, arg1->val, arg2->val);
+        int line = addCode(C_GREATER, arg2->val, arg1->val);
         char *sign = (char *)malloc(sizeof(char) * (8));
         sprintf(sign, "(%d)", line);
         ExpVal *greaterVal = createExpVal(arg2->valType, arg2->valType, sign);
@@ -950,7 +1070,7 @@ ExpVal *__dealExp(Node *exp)
                 __dealCast(exp->line, arg2->valType, arg1, OPERATOR_TYPE_ERROR);
             }
         }
-        int line = addCode(C_MINUS, arg1->val, arg2->val);
+        int line = addCode(C_MINUS, arg2->val, arg1->val);
         char *sign = (char *)malloc(sizeof(char) * (8));
         sprintf(sign, "(%d)", line);
         ExpVal *minusVal = createExpVal(arg2->valType, arg2->valType, sign);
@@ -980,7 +1100,7 @@ ExpVal *__dealExp(Node *exp)
                 __dealCast(exp->line, arg2->valType, arg1, OPERATOR_TYPE_ERROR);
             }
         }
-        int line = addCode(C_PLUS, arg1->val, arg2->val);
+        int line = addCode(C_PLUS, arg2->val, arg1->val);
         char *sign = (char *)malloc(sizeof(char) * (8));
         sprintf(sign, "(%d)", line);
         ExpVal *plusVal = createExpVal(arg2->valType, arg2->valType, sign);
@@ -1018,7 +1138,7 @@ ExpVal *__dealExp(Node *exp)
             // cast it to `int` type
             __dealCast(exp->line, "int", arg2, OPERATOR_TYPE_ERROR);
         }
-        int line = addCode(C_DELIVERY, arg1->val, arg2->val);
+        int line = addCode(C_DELIVERY, arg2->val, arg1->val);
         char *sign = (char *)malloc(sizeof(char) * (8));
         sprintf(sign, "(%d)", line);
         ExpVal *deliveryVal = createExpVal(arg2->valType, arg2->valType, sign);
@@ -1048,7 +1168,7 @@ ExpVal *__dealExp(Node *exp)
                 __dealCast(exp->line, arg2->valType, arg1, OPERATOR_TYPE_ERROR);
             }
         }
-        int line = addCode(C_MULIPLY, arg1->val, arg2->val);
+        int line = addCode(C_MULIPLY, arg2->val, arg1->val);
         char *sign = (char *)malloc(sizeof(char) * (8));
         sprintf(sign, "(%d)", line);
         ExpVal *multiplyVal = createExpVal(arg2->valType, arg2->valType, sign);
@@ -1078,7 +1198,7 @@ ExpVal *__dealExp(Node *exp)
                 __dealCast(exp->line, arg2->valType, arg1, OPERATOR_TYPE_ERROR);
             }
         }
-        int line = addCode(C_DIVIDER, arg1->val, arg2->val);
+        int line = addCode(C_DIVIDER, arg2->val, arg1->val);
         char *sign = (char *)malloc(sizeof(char) * (8));
         sprintf(sign, "(%d)", line);
         ExpVal *dividerVal = createExpVal(arg2->valType, arg2->valType, sign);
@@ -1127,13 +1247,41 @@ ExpVal *__dealExp(Node *exp)
         arg1->val = sign;
         return arg1;
     }
+    case GET_ARRAY_DATA:
+    { /**
+       * GET_ARRAY_DATA
+       * --Exp
+       * --Exp
+       */
+        ExpVal *arg1 = __dealExp(exp->children[0]);
+        ExpVal *arg2 = __dealExp(exp->children[1]);
+        if (arg1->complexType == NULL || !strstr(arg1->complexType, "ptr"))
+        {
+            error(exp->line, GET_DATA_ERROR);
+            return arg1;
+        }
+        // calculate addr
+        int line = addCode(C_PLUS, arg1->val, arg2->val);
+        char *sign = (char *)malloc(sizeof(char) * (8));
+        sprintf(sign, "(%d)", line);
+        arg1->val = sign;
+        // get data
+        line = addCode(C_GET_DATA, arg1->val, NULL);
+        sign = (char *)malloc(sizeof(char) * (8));
+        sprintf(sign, "(%d)", line);
+        arg1->val = sign;
+        arg1->type = "addr";
+        arg1->complexType = "ptr";
+        arg1->ptrStar = arg1->ptrStar != 0 ? arg1->ptrStar - 1 : 0;
+        return arg1;
+    }
     case FDMINUS:
     { /**
        * FDMINUS
        * --Exp
        */
         ExpVal *arg1 = __dealExp(exp->children[0]);
-        int line = addCode(C_MINUS, "1", arg1->val);
+        int line = addCode(C_MINUS, arg1->val, "1");
         char *sign = (char *)malloc(sizeof(char) * (8));
         sprintf(sign, "(%d)", line);
         arg1->val = sign;
@@ -1145,7 +1293,7 @@ ExpVal *__dealExp(Node *exp)
        * --Exp
        */
         ExpVal *arg1 = __dealExp(exp->children[0]);
-        int line = addCode(C_MINUS, "1", arg1->val);
+        int line = addCode(C_MINUS, arg1->val, "1");
         return arg1;
     }
     case BDPLUS:
@@ -1154,7 +1302,7 @@ ExpVal *__dealExp(Node *exp)
        * --Exp
        */
         ExpVal *arg1 = __dealExp(exp->children[0]);
-        int line = addCode(C_PLUS, "1", arg1->val);
+        int line = addCode(C_PLUS, arg1->val, "1");
         char *sign = (char *)malloc(sizeof(char) * (8));
         sprintf(sign, "(%d)", line);
         arg1->val = sign;
@@ -1166,7 +1314,7 @@ ExpVal *__dealExp(Node *exp)
        * --Exp
        */
         ExpVal *arg1 = __dealExp(exp->children[0]);
-        int line = addCode(C_PLUS, "1", arg1->val);
+        int line = addCode(C_PLUS, arg1->val, "1");
         return arg1;
     }
     case DOT:
@@ -1192,7 +1340,7 @@ ExpVal *__dealExp(Node *exp)
         }
         char *offset = (char *)malloc(sizeof(char) * 10);
         itoa(syb->offset - syb->ptr->width, offset, 10);
-        int line = addCode(C_PLUS, offset, arg2->val);
+        int line = addCode(C_PLUS, arg2->val, offset);
         char *sign = (char *)malloc(sizeof(char) * (8));
         sprintf(sign, "(%d)", line);
         arg1->val = sign;
@@ -1221,7 +1369,7 @@ ExpVal *__dealExp(Node *exp)
         }
         char *offset = (char *)malloc(sizeof(char) * 10);
         itoa(syb->offset - syb->ptr->width, offset, 10);
-        int line = addCode(C_PLUS, offset, arg2->val);
+        int line = addCode(C_PLUS, arg2->val, offset);
         char *sign = (char *)malloc(sizeof(char) * (8));
         sprintf(sign, "(%d)", line);
         arg1->val = sign;
@@ -1338,6 +1486,7 @@ void generateCode(Node *node)
      * Process `prog` to `middle code` as well as code `static` and `dynamic` check
      */
     __dealStmts(node);
+    addCode(C_EXIT, NULL, NULL);
 }
 
 void deleteCode(Code *code)
@@ -1357,14 +1506,14 @@ void deleteCodeManager()
 
 void printCode(Code *code)
 {
-    printf("(%4d) < ", code->line);
+    printf("\033[34m(%4d) < \033[0m", code->line);
     printOp(code->op);
-    printf(" , %10s , %10s >\n", code->arg1, code->arg2);
+    printf(" , %10s , %10s \033[34m>\033[0m\n", code->arg1, code->arg2);
 }
 
 void printCodeManager()
 {
-    printf("\033[35m(%4s) < %5s , %10s , %10s >\033[0m\n", "line", "op", "arg1", "arg2");
+    printf("\033[33m(%4s) < %10s , %10s , %10s >\033[0m\n", "line", "op", "arg1", "arg2");
     for (int i = 0; i < manager->line; i++)
         printCode(manager->codeList[i]);
 }

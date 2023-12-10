@@ -28,7 +28,8 @@ enum CodeOp
     C_CALL,
     C_PARAM,
     // move
-    C_GOTO,
+    C_JF,
+    C_J,
     // transform
     C_FLOAT,
     C_INT,
@@ -36,7 +37,15 @@ enum CodeOp
     C_POINTER,
     // get
     C_GET_DATA,
-    C_GET_ADDR
+    C_GET_ADDR,
+    // prog eof
+    C_EXIT,
+    C_RETURN,
+    C_FUNC,
+    C_END_FUNC,
+    C_STRUCT,
+    C_END_STRUCT,
+    C_DEF,
 };
 
 void printOp(int op);
@@ -77,7 +86,7 @@ void __dealStmts(Node *stmts);
 
 void __dealStmt(Node *stmt, int isGlobal);
 
-int __dealVar(Node *var, int isGlobal, int isDeclare);
+int __dealVar(Node *var, int isGlobal, int isDeclare, int genCode);
 
 ExpVal *__dealExp(Node *exp);
 

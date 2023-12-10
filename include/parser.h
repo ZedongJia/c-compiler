@@ -118,19 +118,20 @@
      STMT = 334,
      GET_ADDR = 335,
      GET_DATA = 336,
-     RETURN = 337,
-     ARG = 338,
-     IF = 339,
-     ELSE = 340,
-     WHILE = 341,
-     FOR = 342,
-     FOR_START_STMT = 343,
-     FOR_COND_STMT = 344,
-     FOR_ITER_EXP = 345,
-     MUL = 346,
-     GADDR = 347,
-     GDATA = 348,
-     SMINUS = 349
+     GET_ARRAY_DATA = 337,
+     RETURN = 338,
+     ARG = 339,
+     IF = 340,
+     ELSE = 341,
+     WHILE = 342,
+     FOR = 343,
+     FOR_START_STMT = 344,
+     FOR_COND_STMT = 345,
+     FOR_ITER_EXP = 346,
+     MUL = 347,
+     GADDR = 348,
+     GDATA = 349,
+     SMINUS = 350
    };
 #endif
 
@@ -149,7 +150,7 @@ typedef union YYSTYPE
 
 
 /* Line 1676 of yacc.c  */
-#line 153 "include/parser.h"
+#line 154 "include/parser.h"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
