@@ -177,7 +177,7 @@ void appendNodes(Node *node, Node *__extern)
     // assign
     node->children = children;
 
-    // ++
+    // increment
     node->numOfChildren += __extern->numOfChildren;
 }
 

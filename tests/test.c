@@ -1,22 +1,61 @@
 // int a;
 // int a;
 // int a = 6;
-int tesss(int a, char b, char *c, int *d, int arr[]);
+// int tesss(int a, char b, char *c, int *d, int arr[]);
+struct test
+{
+    /* data */
+    int a;
+} t, t2, *ttt;
+struct test2
+{
+    /* data */
+} t3;
+int testPrint(int a, int b)
+{
+    return a + b;
+}
 int main(int argc, char const *argv[])
 {
-    int *a = (int *)malloc(5);
-    a[5] = 6;
-    for (int i = 0; i < 5; i++)
-    {
-        printf("%d", i);
-    }
-    for (;;);
-    if (a == 5)
-    {
-        a[4] = 6;
-    } else {
-        a[4] = 1;
-    }
+    // int *a = (int *)malloc(5);
+    // int a[5];
+    // a[5] = 6;
+    // for (int i = 0; i < 5; i++)
+    // {
+    //     printf("%d", i);
+    // }
+    // for (;;)
+    //     ;
+    // if (a == 5)
+    // {
+    //     a[4] = 6;
+    // }
+    // else
+    // {
+    //     a[4] = 1;
+    // }
+    // return 0;
+    int a = 5, b;
+    testPrint(a, b);
+    int c[5];
+    a = 1 + 2.0;
+    b = 1 - 5.0;
+    a = 1 / 5.0;
+    a = 1 * 5.0;
+    a = 1 % 5;
+    a = a++;
+    a = ++a;
+    a = --a;
+    a = a--;
+    !a;
+    t.a = 5;
+    ttt.a;
+    ttt->a = 5;
+    a &&b;
+    a != b;
+    a > b;
+    a < b;
+    a == b;
     return 0;
 }
 
@@ -148,7 +187,6 @@ int main(int argc, char const *argv[])
 // int a;
 
 // void test(int a, int b);
-
 
 // char *ss() {
 

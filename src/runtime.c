@@ -169,6 +169,29 @@ int lookAheadDefination(Runtime *runtime, Symbol *symbol)
     return 0;
 }
 
+Symbol *lookup(Runtime *runtime, char *id, int usePrev)
+{
+    if (runtime == NULL)
+    {
+        return NULL;
+    }
+    for (int i = 0; i < runtime->numOfSymbols; i++)
+    {
+        if (strcmp(runtime->symbols[i]->lexeme, id) == 0)
+        {
+            return runtime->symbols[i];
+        }
+    }
+    if (usePrev == 1)
+    {
+        return lookup(runtime->prev, id, usePrev);
+    }
+    else
+    {
+        return NULL;
+    }
+}
+
 /* Print for Debug */
 void printRuntime(Runtime *runtime)
 {

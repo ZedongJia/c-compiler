@@ -8,7 +8,7 @@ enum CodeOp
 {
     C_ASSIGN,
     // calculate
-    C_ADD,
+    C_PLUS,
     C_MINUS,
     C_MULIPLY,
     C_DIVIDER,
@@ -21,10 +21,37 @@ enum CodeOp
     C_SMALLER_EQUAL,
     C_EQUAL,
     C_NOT_EQUAL,
-
+    C_NOT,
+    C_OR,
+    C_AND,
+    // function call
+    C_CALL,
+    C_PARAM,
     // move
-    C_GOTO
+    C_GOTO,
+    // transform
+    C_FLOAT,
+    C_INT,
+    C_CHAR,
+    C_POINTER,
+    // get
+    C_GET_DATA,
+    C_GET_ADDR
 };
+
+void printOp(int op);
+
+typedef struct ExpVal
+{
+    char *type;        // exp type
+    char *valType;     // exp value type
+    char *complexType; // exp complex type
+    int ptrStar;       // number of ptr stars
+    char *val;         // value
+} ExpVal;
+
+// expval methods
+ExpVal *createExpVal(char *type, char *valType, char *val);
 
 typedef struct Code
 {
@@ -38,34 +65,42 @@ typedef struct Code
 typedef struct CodeManager
 {
     /* data */
-    int prog[CODE_SIZE];
-    int size;
-    int line;
-    Code *codeList[CODE_SIZE];
+    int prog[CODE_SIZE];       // program (line list)
+    int line;                  // current line
+    Code *codeList[CODE_SIZE]; // codes
 } CodeManager;
 
 CodeManager *manager;
 
-// sparate it to stmts level, stmt level and var level
+// sparate it to stmts level, stmt level, var level and exp level
 void __dealStmts(Node *stmts);
 
 void __dealStmt(Node *stmt, int isGlobal);
 
 int __dealVar(Node *var, int isGlobal, int isDeclare);
 
+ExpVal *__dealExp(Node *exp);
+
+int __dealCast(int line, char *valType, ExpVal *tra, char *errorMsg);
+
+int __dealTypePriority(char *valType);
+
 // main process entry
 void generateCode(Node *node);
 
-// code structure and code manager utils
-void initCodeManager();
-
+// code structure methods
 Code *createCode(int line, int op, char *arg1, char *arg2);
 
 void deleteCode(Code *code);
 
-void deleteCodeManager();
-
 void printCode(Code *code);
+
+// code manager methods
+void initCodeManager();
+
+int addCode(int op, char *arg1, char *arg2);
+
+void deleteCodeManager();
 
 void printCodeManager();
 

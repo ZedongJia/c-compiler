@@ -14,7 +14,7 @@ int main(int argc, char const *argv[])
     initEnv();
 
     yyparse();
-    printNode(astTree, 0, NULL);
+    // printNode(astTree, 0, NULL);
 
     // codemanager
     initCodeManager();

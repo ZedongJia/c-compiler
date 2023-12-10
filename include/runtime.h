@@ -8,16 +8,16 @@
 // symbol <-map-> variable
 typedef struct Symbol
 {
-    int pos;           // position in runtime
-    int isDefination;  // defination or declare
-    Node *ptr;         // first id, then variable
-    char *lexeme;      // first get
-    char *type;        // second get
-    char *complexType; // second get
-    int line;          // first get
-    int offset;        // second get
-    int duplicate;     // first get
-    int numOfArgs;     // numOfArg
+    int pos;           // relative position in runtime List
+    int isDefination;  // defination (1) or declare (2)
+    Node *ptr;         // variable ptr
+    char *lexeme;      // id, first get
+    char *type;        // valType, second get
+    char *complexType; // complexType, second get
+    int line;          // line, first get
+    int offset;        // addr in runtime, relatively
+    int duplicate;     // if duplicate ?, first get
+    int numOfArgs;     // number of args
 } Symbol;
 
 typedef struct Runtime
@@ -42,7 +42,7 @@ Environment *structEnv;
 
 Runtime *currRuntime;
 
-// Global methods
+// env methods
 void initEnv();
 
 void pushRuntime(Environment *env, Runtime *runtime);
@@ -63,6 +63,7 @@ Symbol *createSymbol();
 void addSymbol(Runtime *runtime, Node *var);
 void deleteSymbol(Runtime *runtime, int pos);
 int lookAheadDefination(Runtime *runtime, Symbol *symbol);
+Symbol *lookup(Runtime *runtime, char *id, int usePrev);
 // debug
 void printRuntime(Runtime *runtime);
 void printEnv();

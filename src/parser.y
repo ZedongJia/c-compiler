@@ -376,6 +376,7 @@ StructDef   : KW_STRUCT ID PushEnv LC StructMemStmts RC {
 
                 $$->symbol->type = $$->valType;
                 $$->symbol->complexType = $$->complexType;
+                $$->symbol->isDefination = 1;
             }
             | KW_STRUCT ID PushEnv LC RC {
                 /* get struct type `struct_id` */
@@ -404,6 +405,7 @@ StructDef   : KW_STRUCT ID PushEnv LC StructMemStmts RC {
 
                 $$->symbol->type = $$->valType;
                 $$->symbol->complexType = $$->complexType;
+                $$->symbol->isDefination = 1;
             }
             ;
 
@@ -611,7 +613,8 @@ Args    : Exp {
             $$ = createNode(ARG, NULL, $1->line, level, 1, $1);
         }
         | Exp COMMA Args {
-            $$ = createNode(ARG, NULL, $1->line, level, 2, $1, $3);
+            prependNode($3, $1);
+            $$ = $3;
         }
         ;
 
@@ -630,6 +633,7 @@ Exp : INT {
         $$ = $1;
     }
     | ID {
+        $1->runtime = currRuntime;
         $$ = $1;
     }
     | LP Type RP Exp {
@@ -643,9 +647,11 @@ Exp : INT {
         $$->complexType = "ptr";
     }
     | ID LP RP {
+        $1->runtime = currRuntime;
         $$ = createNode(FUNC_CALL, NULL, $1->line, level, 1, $1);
     }
     | ID LP Args RP {
+        $1->runtime = currRuntime;
         $$ = createNode(FUNC_CALL, NULL, $1->line, level, 2, $1, $3);
     }
     | Exp ASSIGN Exp {
@@ -695,9 +701,11 @@ Exp : INT {
     }
     | %prec GADDR SAND ID {
         $$ = createNode(GET_ADDR, NULL, $2->line, level, 1, $2);
+        $2->runtime = currRuntime;
     }
     | %prec GDATA STAR ID {
         $$ = createNode(GET_DATA, NULL, $2->line, level, 1, $2);
+        $2->runtime = currRuntime;
     }
     | DMINUS Exp {
         $$ = createNode(FDMINUS, NULL, $2->line, level, 1, $2);
@@ -724,7 +732,7 @@ Exp : INT {
         $$ = createNode(DOT, NULL, $1->line, level, 2, $1, $3);
     }
     | LP Exp RP {
-        $$ = $1;
+        $$ = $2;
     }
     | Exp LB Exp RB {
         // read array data
