@@ -1,7 +1,5 @@
 #include <ext.h>
 
-
-
 Node *astTree;
 int main(int argc, char const *argv[])
 {

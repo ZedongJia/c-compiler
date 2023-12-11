@@ -5,7 +5,6 @@
 #include <foutput.h>
 #include <node.h>
 
-
 // symbol <-map-> variable
 typedef struct Symbol
 {

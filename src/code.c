@@ -1,4 +1,5 @@
 #include <code.h>
+#include <stdio.h>
 
 void printOp(int op)
 {
@@ -59,10 +60,10 @@ void printOp(int op)
         printf("%10s", "char");
         break;
     case C_GET_DATA:
-        printf("%10s", "*");
+        printf("%10s", "read");
         break;
     case C_GET_ADDR:
-        printf("%10s", "&");
+        printf("%10s", "addr");
         break;
     case C_CALL:
         printf("%10s", "call");
@@ -229,6 +230,109 @@ int addCode(int op, char *arg1, char *arg2)
     return manager->line - 1;
 }
 
+void __dealInitializer(Node *var)
+{
+    if (var->initializer != NULL)
+    {
+        Node *initializer = var->initializer;
+        if (var->complexType != NULL && strstr(var->complexType, "ptr"))
+        {
+            // ptr -> not base int,float,char / braceinitializer
+            switch (initializer->type)
+            {
+            case BRACE_INITIALIZER: {
+                int needVals = var->symbol->offset / var->width;
+                if (initializer->numOfChildren < needVals)
+                {
+                    error(initializer->line, LESS_INITIALIZER);
+                }
+                else if (initializer->numOfChildren > needVals)
+                {
+                    error(initializer->line, MANY_INITIALIZER);
+                }
+                for (int i = 0; i < needVals; i++)
+                {
+                    char *val;
+                    if (i >= initializer->numOfChildren)
+                    {
+                        // pad
+                        val = "0";
+                    }
+                    else
+                    {
+                        // assign
+                        ExpVal *rtVal = __dealExp(initializer->children[i]);
+                        val = rtVal->val;
+                    }
+                    char *offset = (char *)malloc(sizeof(char) * (8));
+                    itoa(i * var->width, offset, 10);
+                    int line = addCode(C_PLUS, var->lexeme, offset);
+                    char *sign = (char *)malloc(sizeof(char) * (8));
+                    sprintf(sign, "(%d)", line);
+                    addCode(C_ASSIGN, val, sign);
+                }
+                break;
+            }
+            case INITIALIZER: {
+                Node *val = initializer->children[0];
+                switch (val->type)
+                {
+                case INT:
+                case FLOAT:
+                case CHAR: {
+                    error(val->line, TYPE_INITIALIZER_ERROR);
+                    break;
+                }
+                default: {
+                    ExpVal *rtVal = __dealExp(val);
+                    addCode(C_ASSIGN, rtVal->val, var->lexeme);
+                    free(rtVal);
+                }
+                }
+                break;
+            }
+            default:;
+            }
+        }
+        else
+        {
+            // int, float, char, initializer
+            switch (initializer->type)
+            {
+            case BRACE_INITIALIZER: {
+                error(initializer->line, NOT_ALLOW_BRACE);
+                int needVals = 1;
+                for (int i = 0; i < needVals; i++)
+                {
+                    char *val;
+                    if (i >= initializer->numOfChildren)
+                    {
+                        // pad
+                        val = "0";
+                    }
+                    else
+                    {
+                        // assign
+                        ExpVal *rtVal = __dealExp(initializer->children[i]);
+                        val = rtVal->val;
+                    }
+                    addCode(C_ASSIGN, val, var->lexeme);
+                }
+                break;
+            }
+            case INITIALIZER: {
+                Node *val = initializer->children[0];
+                ExpVal *rtVal = __dealExp(val);
+                addCode(C_ASSIGN, rtVal->val, var->lexeme);
+                free(rtVal);
+                break;
+            }
+            default:;
+            }
+        }
+    }
+}
+
 /**
  * Global:
  * def -> 1
@@ -239,7 +343,7 @@ int addCode(int op, char *arg1, char *arg2)
  * dec -> 1
  */
 
-int __dealVar(Node *var, int isGlobal, int isDeclare, int genCode)
+int __dealVar(Node *var, int isGlobal, int isDeclare)
 {
     int varCnt = 1;
     /**
@@ -293,6 +397,14 @@ int __dealVar(Node *var, int isGlobal, int isDeclare, int genCode)
                 // do not duplicate
                 __getOffset(var);
                 var->symbol->isDefination = 1;
+                char *width = (char *)malloc(sizeof(char) * 4);
+                itoa(var->width, width, 10);
+                addCode(C_DEF, var->lexeme, width);
+                // has initializer ? do initialize
+                /**
+                 * BraceInitializer or Initializer ?
+                 */
+                __dealInitializer(var);
             }
         }
     }
@@ -309,18 +421,20 @@ int __dealVar(Node *var, int isGlobal, int isDeclare, int genCode)
         {
             // set defination
             __getOffset(var);
-            if (genCode == 1)
-            {
-                char *width = (char *)malloc(sizeof(char) * 4);
-                itoa(var->width, width, 10);
-                addCode(C_DEF, var->lexeme, width);
-            }
+            char *width = (char *)malloc(sizeof(char) * 4);
+            itoa(var->width, width, 10);
+            addCode(C_DEF, var->lexeme, width);
+            // has initializer ? do initialize
+            /**
+             * BraceInitializer or Initializer ?
+             */
+            __dealInitializer(var);
         }
     }
     for (int i = 0; i < var->numOfChildren; i++)
     {
         // deal with next variable, and add it to varCnt
-        varCnt += __dealVar(var->children[i], isGlobal, isDeclare, genCode);
+        varCnt += __dealVar(var->children[i], isGlobal, isDeclare);
     }
     return varCnt;
 }
@@ -367,25 +481,23 @@ void __dealStmt(Node *stmt, int isGlobal)
 {
     switch (stmt->type)
     {
-    case VAR_DEF:
-    { /**
-       * VAR_DEF
-       * --VAR
-       * -----*property
-       * -----VAR
-       */
-        __dealVar(stmt->children[0], isGlobal, 0, 1);
+    case VAR_DEF: { /**
+                     * VAR_DEF
+                     * --VAR
+                     * -----*property
+                     * -----VAR
+                     */
+        __dealVar(stmt->children[0], isGlobal, 0);
         break;
     }
-    case FUNC_DEF:
-    { /**
-       * FUNC_DEF
-       * --VAR
-       * --ARG_DEC (?)
-       * --STMTS (?)
-       */
+    case FUNC_DEF: { /**
+                      * FUNC_DEF
+                      * --VAR
+                      * --ARG_DEC (?)
+                      * --STMTS (?)
+                      */
         Node *var = stmt->children[0];
-        __dealVar(var, isGlobal, 0, 0);
+        __dealVar(var, isGlobal, 0);
 
         addCode(C_FUNC, var->lexeme, NULL);
         int numOfArgs = 0;
@@ -394,7 +506,7 @@ void __dealStmt(Node *stmt, int isGlobal)
             if (stmt->children[1]->type == ARG_DEC)
             {
                 // ARG_DEC
-                numOfArgs = __dealVar(stmt->children[1]->children[0], 0, 1, 0);
+                numOfArgs = __dealVar(stmt->children[1]->children[0], 0, 1);
             }
             else
             {
@@ -411,13 +523,12 @@ void __dealStmt(Node *stmt, int isGlobal)
         addCode(C_END_FUNC, NULL, NULL);
         break;
     }
-    case STRUCT_DEF:
-    { /**
-       * STRUCT_DEF
-       * --*property
-       * --STMTS (?)
-       * --VAR_DEF/VAR_DEC (?)
-       */
+    case STRUCT_DEF: { /**
+                        * STRUCT_DEF
+                        * --*property
+                        * --STMTS (?)
+                        * --VAR_DEF/VAR_DEC (?)
+                        */
         addCode(C_STRUCT, stmt->lexeme, NULL);
         __getOffset(stmt);
         if (stmt->numOfChildren > 0)
@@ -446,41 +557,38 @@ void __dealStmt(Node *stmt, int isGlobal)
         }
         break;
     }
-    case VAR_DEC:
-    { /**
-       * VAR_DEC
-       * --VAR
-       * -----*property
-       * -----VAR
-       */
-        __dealVar(stmt->children[0], isGlobal, 1, 1);
+    case VAR_DEC: { /**
+                     * VAR_DEC
+                     * --VAR
+                     * -----*property
+                     * -----VAR
+                     */
+        __dealVar(stmt->children[0], isGlobal, 1);
         break;
     }
-    case FUNC_DEC:
-    { /**
-       * FUNC_DEC
-       * --VAR
-       * --ARG_DEC (?)
-       */
+    case FUNC_DEC: { /**
+                      * FUNC_DEC
+                      * --VAR
+                      * --ARG_DEC (?)
+                      */
         Node *var = stmt->children[0];
-        __dealVar(var, isGlobal, 1, 0);
+        __dealVar(var, isGlobal, 1);
         int numOfArgs = 0;
         if (stmt->numOfChildren > 1)
         {
             // ARG_DEC
-            numOfArgs = __dealVar(stmt->children[1]->children[0], 0, 1, 0);
+            numOfArgs = __dealVar(stmt->children[1]->children[0], 0, 1);
         }
         var->symbol->numOfArgs = numOfArgs;
         break;
     }
-    case FOR:
-    { /**
-       * FOR
-       * --FOR_START_STMT (deslStmt)
-       * --FOR_COND_STMT  (dealStmt)
-       * --FOR_ITER_EXP   (dealExp )
-       * **need transform to code
-       */
+    case FOR: { /**
+                 * FOR
+                 * --FOR_START_STMT (deslStmt)
+                 * --FOR_COND_STMT  (dealStmt)
+                 * --FOR_ITER_EXP   (dealExp )
+                 * **need transform to code
+                 */
         Node *start = stmt->children[0];
         __dealStmt(start, 0);
         Node *cond = stmt->children[1];
@@ -515,36 +623,33 @@ void __dealStmt(Node *stmt, int isGlobal)
         sprintf(sign, "(%d)", manager->line);
         manager->codeList[condCode]->arg2 = sign;
     }
-    case FOR_START_STMT:
-    { /**
-       * FOR_START_STMT
-       * --VAR_DEF / Exp (?)
-       */
+    case FOR_START_STMT: { /**
+                            * FOR_START_STMT
+                            * --VAR_DEF / Exp (?)
+                            */
         if (stmt->numOfChildren > 0)
         {
             __dealStmt(stmt->children[0], 0);
         }
         break;
     }
-    case FOR_COND_STMT:
-    { /**
-       * FOR_COND_STMT
-       * --Exp (?)
-       */
+    case FOR_COND_STMT: { /**
+                           * FOR_COND_STMT
+                           * --Exp (?)
+                           */
         if (stmt->numOfChildren > 0)
         {
             __dealStmt(stmt->children[0], 0);
         }
         break;
     }
-    case IF:
-    { /**
-       * IF
-       * --Exp
-       * --STMTS
-       * --ELSE (?)
-       * **need transform to code
-       */
+    case IF: { /**
+                * IF
+                * --Exp
+                * --STMTS
+                * --ELSE (?)
+                * **need transform to code
+                */
         __dealStmt(stmt->children[0], 0);
         int condEndLine = manager->line - 1;
         int condCode = -1;
@@ -572,21 +677,19 @@ void __dealStmt(Node *stmt, int isGlobal)
         manager->codeList[finishCode]->arg1 = sign;
         break;
     }
-    case ELSE:
-    { /**
-       * ELSE
-       * --STMTS
-       */
+    case ELSE: { /**
+                  * ELSE
+                  * --STMTS
+                  */
         __dealStmts(stmt->children[0]);
         break;
     }
-    case WHILE:
-    { /**
-       * WHILE
-       * --Exp
-       * --STMTS
-       * **need transform to code
-       */
+    case WHILE: { /**
+                   * WHILE
+                   * --Exp
+                   * --STMTS
+                   * **need transform to code
+                   */
         int condStartLine = manager->line;
         __dealStmt(stmt->children[0], 0);
         int condEndLine = manager->line - 1;
@@ -606,8 +709,7 @@ void __dealStmt(Node *stmt, int isGlobal)
         manager->codeList[condCode]->arg2 = sign;
         break;
     }
-    case RETURN:
-    {
+    case RETURN: {
         /**
          * RETURN
          * --Exp (?)
@@ -623,8 +725,7 @@ void __dealStmt(Node *stmt, int isGlobal)
             addCode(C_RETURN, NULL, NULL);
         }
     }
-    default:
-    {
+    default: {
         __dealExp(stmt);
     }
     }
@@ -634,25 +735,22 @@ ExpVal *__dealExp(Node *exp)
 {
     switch (exp->type)
     {
+    case FOR_ITER_EXP:
+        return __dealExp(exp->children[0]);
         /* base type */
-    case INT:
-    {
+    case INT: {
         return createExpVal("int", "int", exp->val);
     }
-    case FLOAT:
-    {
+    case FLOAT: {
         return createExpVal("float", "float", exp->val);
     }
-    case CHAR:
-    {
+    case CHAR: {
         return createExpVal("char", "char", exp->val);
     }
-    case STRING:
-    {
+    case STRING: {
         return createExpVal("string", "string", exp->val);
     }
-    case ID:
-    {
+    case ID: {
         ExpVal *expVal = createExpVal("addr", NULL, exp->val);
         // normal variable
         Symbol *syb = lookup(exp->runtime, exp->val, 1);
@@ -669,12 +767,11 @@ ExpVal *__dealExp(Node *exp)
         }
         return expVal;
     }
-    case TRANSFORM:
-    { /**
-       * TRANSFORM
-       * --*property (valType, ptrStar, complexType)
-       * --Exp
-       */
+    case TRANSFORM: { /**
+                       * TRANSFORM
+                       * --*property (valType, ptrStar, complexType)
+                       * --Exp
+                       */
         ExpVal *arg1 = __dealExp(exp->children[0]);
         if (strcmp(exp->valType, arg1->valType) != 0)
         {
@@ -705,12 +802,11 @@ ExpVal *__dealExp(Node *exp)
         return arg1;
         break;
     }
-    case FUNC_CALL:
-    { /**
-       * FUNC_CALL
-       * --ID
-       * --Args (?)
-       */
+    case FUNC_CALL: { /**
+                       * FUNC_CALL
+                       * --ID
+                       * --Args (?)
+                       */
         Node *id = exp->children[0];
         Symbol *syb = lookup(id->runtime, id->val, 1);
         if (syb == NULL)
@@ -749,12 +845,11 @@ ExpVal *__dealExp(Node *exp)
         rt->complexType = syb->complexType;
         return rt;
     }
-    case ASSIGN:
-    { /**
-       * ASSIGN
-       * --Exp (arg2)
-       * --Exp (arg1)
-       */
+    case ASSIGN: { /**
+                    * ASSIGN
+                    * --Exp (arg2)
+                    * --Exp (arg1)
+                    */
         ExpVal *arg1 = __dealExp(exp->children[1]);
         ExpVal *arg2 = __dealExp(exp->children[0]);
         if (strcmp(arg2->type, "addr") != 0)
@@ -771,7 +866,8 @@ ExpVal *__dealExp(Node *exp)
             // not align in complexType
             if (strcmp(arg2->complexType, arg1->complexType) != 0 || arg2->ptrStar != arg1->ptrStar)
             {
-                error(exp->line, ASSIGE_COMPLEX_TYPE_ERROR, arg1->ptrStar, arg1->complexType, arg2->ptrStar, arg2->complexType);
+                error(exp->line, ASSIGE_COMPLEX_TYPE_ERROR, arg1->ptrStar, arg1->complexType, arg2->ptrStar,
+                      arg2->complexType);
                 free(arg2);
                 return arg1;
             }
@@ -800,12 +896,11 @@ ExpVal *__dealExp(Node *exp)
         return assignVal;
         break;
     }
-    case OR:
-    { /**
-       * OR
-       * --Exp
-       * --Exp
-       */
+    case OR: { /**
+                * OR
+                * --Exp
+                * --Exp
+                */
         ExpVal *arg1 = __dealExp(exp->children[1]);
         ExpVal *arg2 = __dealExp(exp->children[0]);
         if (strcmp(arg1->valType, arg2->valType) != 0)
@@ -830,12 +925,11 @@ ExpVal *__dealExp(Node *exp)
         free(arg2);
         return orVal;
     }
-    case AND:
-    { /**
-       * AND
-       * --Exp
-       * --Exp
-       */
+    case AND: { /**
+                 * AND
+                 * --Exp
+                 * --Exp
+                 */
         ExpVal *arg1 = __dealExp(exp->children[1]);
         ExpVal *arg2 = __dealExp(exp->children[0]);
         if (strcmp(arg1->valType, arg2->valType) != 0)
@@ -861,12 +955,11 @@ ExpVal *__dealExp(Node *exp)
         return andVal;
     }
 
-    case NOT_EQUAL:
-    { /**
-       * NOT_EQUAL
-       * --Exp
-       * --Exp
-       */
+    case NOT_EQUAL: { /**
+                       * NOT_EQUAL
+                       * --Exp
+                       * --Exp
+                       */
         ExpVal *arg1 = __dealExp(exp->children[1]);
         ExpVal *arg2 = __dealExp(exp->children[0]);
         if (strcmp(arg1->valType, arg2->valType) != 0)
@@ -892,12 +985,11 @@ ExpVal *__dealExp(Node *exp)
         return notEqualVal;
     }
 
-    case EQUAL:
-    { /**
-       * EQUAL
-       * --Exp
-       * --Exp
-       */
+    case EQUAL: { /**
+                   * EQUAL
+                   * --Exp
+                   * --Exp
+                   */
         ExpVal *arg1 = __dealExp(exp->children[1]);
         ExpVal *arg2 = __dealExp(exp->children[0]);
         if (strcmp(arg1->valType, arg2->valType) != 0)
@@ -923,12 +1015,11 @@ ExpVal *__dealExp(Node *exp)
         return equalVal;
     }
 
-    case SMALLER_EQUAL:
-    { /**
-       * SMALLER_EQUAL
-       * --Exp
-       * --Exp
-       */
+    case SMALLER_EQUAL: { /**
+                           * SMALLER_EQUAL
+                           * --Exp
+                           * --Exp
+                           */
         ExpVal *arg1 = __dealExp(exp->children[1]);
         ExpVal *arg2 = __dealExp(exp->children[0]);
         if (strcmp(arg1->valType, arg2->valType) != 0)
@@ -954,12 +1045,11 @@ ExpVal *__dealExp(Node *exp)
         return smallerEqualVal;
     }
 
-    case SMALLER:
-    { /**
-       * SMALLER
-       * --Exp
-       * --Exp
-       */
+    case SMALLER: { /**
+                     * SMALLER
+                     * --Exp
+                     * --Exp
+                     */
         ExpVal *arg1 = __dealExp(exp->children[1]);
         ExpVal *arg2 = __dealExp(exp->children[0]);
         if (strcmp(arg1->valType, arg2->valType) != 0)
@@ -985,12 +1075,11 @@ ExpVal *__dealExp(Node *exp)
         return smallerVal;
     }
 
-    case GREATER_EQUAL:
-    { /**
-       * GREATER_EQUAL
-       * --Exp
-       * --Exp
-       */
+    case GREATER_EQUAL: { /**
+                           * GREATER_EQUAL
+                           * --Exp
+                           * --Exp
+                           */
         ExpVal *arg1 = __dealExp(exp->children[1]);
         ExpVal *arg2 = __dealExp(exp->children[0]);
         if (strcmp(arg1->valType, arg2->valType) != 0)
@@ -1016,12 +1105,11 @@ ExpVal *__dealExp(Node *exp)
         return greaterEqualVal;
     }
 
-    case GREATER:
-    { /**
-       * GREATER
-       * --Exp
-       * --Exp
-       */
+    case GREATER: { /**
+                     * GREATER
+                     * --Exp
+                     * --Exp
+                     */
         ExpVal *arg1 = __dealExp(exp->children[1]);
         ExpVal *arg2 = __dealExp(exp->children[0]);
         if (strcmp(arg1->valType, arg2->valType) != 0)
@@ -1047,12 +1135,11 @@ ExpVal *__dealExp(Node *exp)
         return greaterVal;
     }
 
-    case MINUS:
-    { /**
-       * MINUS
-       * --Exp
-       * --Exp
-       */
+    case MINUS: { /**
+                   * MINUS
+                   * --Exp
+                   * --Exp
+                   */
         ExpVal *arg1 = __dealExp(exp->children[1]);
         ExpVal *arg2 = __dealExp(exp->children[0]);
         if (strcmp(arg1->valType, arg2->valType) != 0)
@@ -1077,12 +1164,11 @@ ExpVal *__dealExp(Node *exp)
         free(arg2);
         return minusVal;
     }
-    case PLUS:
-    { /**
-       * PLUS
-       * --Exp (arg2)
-       * --Exp (arg1)
-       */
+    case PLUS: { /**
+                  * PLUS
+                  * --Exp (arg2)
+                  * --Exp (arg1)
+                  */
         ExpVal *arg1 = __dealExp(exp->children[1]);
         ExpVal *arg2 = __dealExp(exp->children[0]);
         if (strcmp(arg1->valType, arg2->valType) != 0)
@@ -1109,12 +1195,11 @@ ExpVal *__dealExp(Node *exp)
         return plusVal;
     }
 
-    case DELIVERY:
-    { /**
-       * DELIVERY
-       * --Exp
-       * --Exp
-       */
+    case DELIVERY: { /**
+                      * DELIVERY
+                      * --Exp
+                      * --Exp
+                      */
         ExpVal *arg1 = __dealExp(exp->children[1]);
         ExpVal *arg2 = __dealExp(exp->children[0]);
         if (strcmp(arg1->valType, "float") == 0)
@@ -1145,12 +1230,11 @@ ExpVal *__dealExp(Node *exp)
         free(arg2);
         return deliveryVal;
     }
-    case MULTIPLY:
-    { /**
-       * MULTIPLY
-       * --Exp
-       * --Exp
-       */
+    case MULTIPLY: { /**
+                      * MULTIPLY
+                      * --Exp
+                      * --Exp
+                      */
         ExpVal *arg1 = __dealExp(exp->children[1]);
         ExpVal *arg2 = __dealExp(exp->children[0]);
         if (strcmp(arg1->valType, arg2->valType) != 0)
@@ -1175,12 +1259,11 @@ ExpVal *__dealExp(Node *exp)
         free(arg2);
         return multiplyVal;
     }
-    case DIV:
-    { /**
-       * DIV
-       * --Exp
-       * --Exp
-       */
+    case DIV: { /**
+                 * DIV
+                 * --Exp
+                 * --Exp
+                 */
         ExpVal *arg1 = __dealExp(exp->children[1]);
         ExpVal *arg2 = __dealExp(exp->children[0]);
         if (strcmp(arg1->valType, arg2->valType) != 0)
@@ -1205,11 +1288,10 @@ ExpVal *__dealExp(Node *exp)
         free(arg2);
         return dividerVal;
     }
-    case NOT:
-    { /**
-       * NOT
-       * --Exp
-       */
+    case NOT: { /**
+                 * NOT
+                 * --Exp
+                 */
         ExpVal *arg1 = __dealExp(exp->children[0]);
         int line = addCode(C_NOT, arg1->val, NULL);
         char *sign = (char *)malloc(sizeof(char) * (8));
@@ -1217,11 +1299,10 @@ ExpVal *__dealExp(Node *exp)
         arg1->val = sign;
         return arg1;
     }
-    case GET_ADDR:
-    { /**
-       * GET_ADDR
-       * --Exp
-       */
+    case GET_ADDR: { /**
+                      * GET_ADDR
+                      * --Exp
+                      */
         ExpVal *arg1 = __dealExp(exp->children[0]);
         int line = addCode(C_GET_ADDR, arg1->val, NULL);
         char *sign = (char *)malloc(sizeof(char) * (8));
@@ -1229,11 +1310,10 @@ ExpVal *__dealExp(Node *exp)
         arg1->val = sign;
         return arg1;
     }
-    case GET_DATA:
-    { /**
-       * GET_DATA
-       * --Exp
-       */
+    case GET_DATA: { /**
+                      * GET_DATA
+                      * --Exp
+                      */
         ExpVal *arg1 = __dealExp(exp->children[0]);
         if (arg1->complexType == NULL || !strstr(arg1->complexType, "ptr"))
         {
@@ -1246,12 +1326,11 @@ ExpVal *__dealExp(Node *exp)
         arg1->val = sign;
         return arg1;
     }
-    case GET_ARRAY_DATA:
-    { /**
-       * GET_ARRAY_DATA
-       * --Exp
-       * --Exp
-       */
+    case GET_ARRAY_DATA: { /**
+                            * GET_ARRAY_DATA
+                            * --Exp
+                            * --Exp
+                            */
         ExpVal *arg1 = __dealExp(exp->children[0]);
         ExpVal *arg2 = __dealExp(exp->children[1]);
         if (arg1->complexType == NULL || !strstr(arg1->complexType, "ptr"))
@@ -1264,21 +1343,20 @@ ExpVal *__dealExp(Node *exp)
         char *sign = (char *)malloc(sizeof(char) * (8));
         sprintf(sign, "(%d)", line);
         arg1->val = sign;
-        // get data
-        line = addCode(C_GET_DATA, arg1->val, NULL);
-        sign = (char *)malloc(sizeof(char) * (8));
-        sprintf(sign, "(%d)", line);
-        arg1->val = sign;
-        arg1->type = "addr";
+        // // get data
+        // line = addCode(C_GET_DATA, arg1->val, NULL);
+        // sign = (char *)malloc(sizeof(char) * (8));
+        // sprintf(sign, "(%d)", line);
+        // arg1->val = sign;
+        // arg1->type = "addr";
         arg1->complexType = "ptr";
         arg1->ptrStar = arg1->ptrStar != 0 ? arg1->ptrStar - 1 : 0;
         return arg1;
     }
-    case FDMINUS:
-    { /**
-       * FDMINUS
-       * --Exp
-       */
+    case FDMINUS: { /**
+                     * FDMINUS
+                     * --Exp
+                     */
         ExpVal *arg1 = __dealExp(exp->children[0]);
         int line = addCode(C_MINUS, arg1->val, "1");
         char *sign = (char *)malloc(sizeof(char) * (8));
@@ -1286,20 +1364,18 @@ ExpVal *__dealExp(Node *exp)
         arg1->val = sign;
         return arg1;
     }
-    case BDMINUS:
-    { /**
-       * BDMINUS
-       * --Exp
-       */
+    case BDMINUS: { /**
+                     * BDMINUS
+                     * --Exp
+                     */
         ExpVal *arg1 = __dealExp(exp->children[0]);
         int line = addCode(C_MINUS, arg1->val, "1");
         return arg1;
     }
-    case BDPLUS:
-    { /**
-       * BDPLUS
-       * --Exp
-       */
+    case BDPLUS: { /**
+                    * BDPLUS
+                    * --Exp
+                    */
         ExpVal *arg1 = __dealExp(exp->children[0]);
         int line = addCode(C_PLUS, arg1->val, "1");
         char *sign = (char *)malloc(sizeof(char) * (8));
@@ -1307,21 +1383,19 @@ ExpVal *__dealExp(Node *exp)
         arg1->val = sign;
         return arg1;
     }
-    case FDPLUS:
-    { /**
-       * FDPLUS
-       * --Exp
-       */
+    case FDPLUS: { /**
+                    * FDPLUS
+                    * --Exp
+                    */
         ExpVal *arg1 = __dealExp(exp->children[0]);
         int line = addCode(C_PLUS, arg1->val, "1");
         return arg1;
     }
-    case DOT:
-    { /**
-       * DOT
-       * --Exp
-       * --Exp
-       */
+    case DOT: { /**
+                 * DOT
+                 * --Exp
+                 * --Exp
+                 */
         ExpVal *arg1 = __dealExp(exp->children[1]);
         ExpVal *arg2 = __dealExp(exp->children[0]);
         Runtime *runtime = exp->children[0]->runtime;
@@ -1345,12 +1419,11 @@ ExpVal *__dealExp(Node *exp)
         arg1->val = sign;
         return arg1;
     }
-    case POINTER:
-    { /**
-       * POINTER
-       * --Exp
-       * --Exp
-       */
+    case POINTER: { /**
+                     * POINTER
+                     * --Exp
+                     * --Exp
+                     */
         ExpVal *arg1 = __dealExp(exp->children[1]);
         ExpVal *arg2 = __dealExp(exp->children[0]);
         if (arg2->complexType == NULL || !strstr(arg2->complexType, "ptr"))

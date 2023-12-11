@@ -2346,7 +2346,7 @@ yyreduce:
 #line 316 "src/parser.y"
     {
                 analysisVar((yyvsp[(2) - (8)].node), (yyvsp[(1) - (8)].node));
-                (yyval.node) = createNode(FUNC_DEF, NULL, (yyvsp[(2) - (8)].node)->line, level, 3, (yyvsp[(2) - (8)].node), (yyvsp[(7) - (8)].node));
+                (yyval.node) = createNode(FUNC_DEF, NULL, (yyvsp[(2) - (8)].node)->line, level, 2, (yyvsp[(2) - (8)].node), (yyvsp[(7) - (8)].node));
                 moveToPrevRuntime();
             ;}
     break;
@@ -2357,7 +2357,7 @@ yyreduce:
 #line 321 "src/parser.y"
     {
                 analysisVar((yyvsp[(2) - (8)].node), (yyvsp[(1) - (8)].node));
-                (yyval.node) = createNode(FUNC_DEF, NULL, (yyvsp[(2) - (8)].node)->line, level, 3, (yyvsp[(2) - (8)].node), (yyvsp[(5) - (8)].node));
+                (yyval.node) = createNode(FUNC_DEF, NULL, (yyvsp[(2) - (8)].node)->line, level, 2, (yyvsp[(2) - (8)].node), (yyvsp[(5) - (8)].node));
                 moveToPrevRuntime();
             ;}
     break;
@@ -3336,7 +3336,7 @@ yyreduce:
 /* Line 1455 of yacc.c  */
 #line 804 "src/parser.y"
     {
-                    (yyval.node) = createNode(FOR_ITER_EXP, NULL, (yyvsp[(1) - (1)].node)->line, level, 1, (yyvsp[(1) - (1)].node));;
+                    (yyval.node) = createNode(FOR_ITER_EXP, NULL, (yyvsp[(1) - (1)].node)->line, level, 1, (yyvsp[(1) - (1)].node));
                 ;}
     break;
 

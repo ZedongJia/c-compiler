@@ -315,12 +315,12 @@ FuncDefStmt : TypeSpecifier Var PrePushEnv LP ArgDecs RP LC LocalStmts RC {
             }
             | TypeSpecifier Var PrePushEnv LP RP LC LocalStmts RC {
                 analysisVar($2, $1);
-                $$ = createNode(FUNC_DEF, NULL, $2->line, level, 3, $2, $7);
+                $$ = createNode(FUNC_DEF, NULL, $2->line, level, 2, $2, $7);
                 moveToPrevRuntime();
             }
             | TypeSpecifier Var PrePushEnv LP ArgDecs RP LC RC {
                 analysisVar($2, $1);
-                $$ = createNode(FUNC_DEF, NULL, $2->line, level, 3, $2, $5);
+                $$ = createNode(FUNC_DEF, NULL, $2->line, level, 2, $2, $5);
                 moveToPrevRuntime();
             }
             | TypeSpecifier Var PrePushEnv LP RP LC RC {
@@ -802,7 +802,7 @@ ForCondStmt     : Exp SEMI {
                 ;
 
 ForIterExp      : Exp {
-                    $$ = createNode(FOR_ITER_EXP, NULL, $1->line, level, 1, $1);;
+                    $$ = createNode(FOR_ITER_EXP, NULL, $1->line, level, 1, $1);
                 }
                 ;
 

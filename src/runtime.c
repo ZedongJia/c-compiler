@@ -198,38 +198,23 @@ void printRuntime(Runtime *runtime)
     for (int i = 0; i < 106; i++)
         printf("-");
     printf("\n");
-    printf("| %10s | %15s | %15s | %6s | %5s | %9s | %12s | %9s |\n",
-           "Lexeme",
-           "Complex Type",
-           "Type", "Offset",
-           "Line",
-           "duplicate",
-           "isDefination",
-           "numOfArgs");
+    printf("| %10s | %15s | %15s | %6s | %5s | %9s | %12s | %9s |\n", "Lexeme", "Complex Type", "Type", "Offset",
+           "Line", "duplicate", "isDefination", "numOfArgs");
     for (int i = 0; i < 106; i++)
         printf("-");
     printf("\n");
     for (int i = 0; i < runtime->numOfSymbols; i++)
-        printf(
-            "| %10s | %15s | %15s | %6d | %5d | %9d | %12d | %9d |\n",
-            runtime->symbols[i]->lexeme,
-            runtime->symbols[i]->complexType,
-            runtime->symbols[i]->type,
-            runtime->symbols[i]->offset,
-            runtime->symbols[i]->line,
-            runtime->symbols[i]->duplicate,
-            runtime->symbols[i]->isDefination,
-            runtime->symbols[i]->numOfArgs);
+        printf("| %10s | %15s | %15s | %6d | %5d | %9d | %12d | %9d |\n", runtime->symbols[i]->lexeme,
+               runtime->symbols[i]->complexType, runtime->symbols[i]->type, runtime->symbols[i]->offset,
+               runtime->symbols[i]->line, runtime->symbols[i]->duplicate, runtime->symbols[i]->isDefination,
+               runtime->symbols[i]->numOfArgs);
 }
 
 void printEnv()
 {
     for (int i = 0; i < env->size; i++)
     {
-        printf(
-            "\n\n\033[35m<--Runtime[ Name:%15s | Level:%2d ]-->\033[0m\n",
-            env->ptrs[i]->name,
-            env->ptrs[i]->level);
+        printf("\n\n\033[35m<--Runtime[ Name:%15s | Level:%2d ]-->\033[0m\n", env->ptrs[i]->name, env->ptrs[i]->level);
         printRuntime(env->ptrs[i]);
     }
 }

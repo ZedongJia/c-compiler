@@ -2,58 +2,82 @@
 // int a;
 // int a = 6;
 // int tesss(int a, char b, char *c, int *d, int arr[]);
-struct test
+int main(int argc, const char *argv[])
 {
-    /* data */
-    int a;
-} t, t2, *ttt;
-struct test2
-{
-    /* data */
-} t3;
-int testPrint(int a, int b)
-{
-    return a + b;
-}
-int main(int argc, char const *argv[])
-{
-    // int *a = (int *)malloc(5);
-    int a[5];
-    // a[5] = 6;
+    int a, b=5;
+    a = b;
+    a = a + 5;
     for (int i = 0; i < 5; i++)
     {
-        i = 5;
+        a = a + i;
     }
-    if (a[1] == 5)
+    if ( a > 5 || a != 8)
     {
-        a[4] = 6;
-    }
-    else
+        a = 111;
+    } else if ( a != 3)
     {
-        a[4] = 1;
+        a = 222;
+    } else {
+        a = 3;
     }
-    // int a = 5, b;
-    // testPrint(a, b);
-    // int c[5];
-    // a = 1 + 2.0;
-    // b = 1 - 5.0;
-    // a = 1 / 5.0;
-    // a = 1 * 5.0;
-    // a = 1 % 5;
-    // a = a++;
-    // a = ++a;
-    // a = --a;
-    // a = a--;
-    // !a;
-    // t.a = 5;
-    // ttt->a = 5;
-    // a &&b;
-    // a != b;
-    // a > b;
-    // a < b;
-    // a == b;
+    while (a != 0) {
+        a = 0;
+    }
     return 0;
 }
+// struct test
+// {
+//     /* data */
+//     int a;
+// } t, t2, *ttt;
+// struct test2
+// {
+//     /* data */
+// } t3;
+// int testPrint(int a, int b)
+// {
+//     return a + b;
+// }
+// int main(int argc, char const *argv[])
+// {
+//     int *a = (int *)malloc(5);
+//     int *b;
+//     int **c;
+//     int ***d = &c;
+//     // a[5] = 6;
+//     for (int i = 0; i < 5; i++)
+//     {
+//         i = 5;
+//     }
+//     if (a[1] == 5)
+//     {
+//         a[4] = 6;
+//     }
+//     else
+//     {
+//         a[4] = 1;
+//     }
+//     testPrint(a, b);
+//     a = 1 + 2.0;
+//     b = 1 - 5.0;
+//     a = 1 / 5.0;
+//     a = 1 * 5.0;
+//     a = 1 % 5;
+//     a = a + 1;
+//     a = a++;
+//     a = ++a;
+//     a = --a;
+//     a = a--;
+//     !a;
+//     t.a = 5;
+//     ttt->a = 5;
+//     a &&b;
+//     a != b;
+//     a > b;
+//     a < b;
+//     a == b;
+//     return 0;
+// }
 
 // int a[5];
 // int b[] = {1, 2, 3, 4, 5};

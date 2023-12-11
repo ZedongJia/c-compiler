@@ -82,11 +82,13 @@ typedef struct CodeManager
 CodeManager *manager;
 
 // sparate it to stmts level, stmt level, var level and exp level
+void __dealInitializer(Node *var);
+
 void __dealStmts(Node *stmts);
 
 void __dealStmt(Node *stmt, int isGlobal);
 
-int __dealVar(Node *var, int isGlobal, int isDeclare, int genCode);
+int __dealVar(Node *var, int isGlobal, int isDeclare);
 
 ExpVal *__dealExp(Node *exp);
 

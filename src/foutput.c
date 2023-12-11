@@ -1,6 +1,6 @@
 #include <foutput.h>
 
-void error(int line, const char* fmt, ...)
+void error(int line, const char *fmt, ...)
 {
     va_list ap;
     va_start(ap, fmt);

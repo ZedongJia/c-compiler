@@ -1,5 +1,5 @@
-#include <node.h>
 #include <ext.h>
+#include <node.h>
 
 Node *createNode(int type, char *val, int line, int level, int numOfChildren, ...)
 {
@@ -317,8 +317,7 @@ void printNode(Node *node, int depth, char *prefix)
         break;
 
     // variable
-    case VAR:
-    {
+    case VAR: {
         printf("VARIABLE \033[32m(%d)\033[0m", node->line);
         printf("\n");
         __printPrefix("*--", depth + 1);
@@ -521,8 +520,7 @@ void __analysisVar(Node *node, Node *specifier)
      */
     switch (node->type)
     {
-    case VAR:
-    {
+    case VAR: {
         // add value modifier
         node->valModifier = specifier->valModifier;
         // add value type

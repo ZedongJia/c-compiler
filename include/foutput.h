@@ -3,6 +3,13 @@
 #include <stdarg.h>
 #include <stdio.h>
 
+/* initializer */
+
+#define MANY_INITIALIZER "too many initializer!"
+#define LESS_INITIALIZER "less initializer!"
+#define TYPE_INITIALIZER_ERROR "initializer type is not correct!"
+#define NOT_ALLOW_BRACE "only array and struct type can be initialized with brace syntax!"
+
 /* def,dec errors */
 #define VARIABLE_REDEFINED "variable %s has already been defined!"
 #define VARIABLE_REDECLARED "variable %s has already been declared!"
