@@ -366,8 +366,8 @@ StructDef   : KW_STRUCT ID PushEnv LC StructMemStmts RC {
                 $$->valModifier = "default";
                 $$->width = 4;
 
-                /* namespace runtime and register */
-                currRuntime->namespace = type;
+                /* name runtime and register */
+                currRuntime->name = type;
                 pushRuntime(structEnv, currRuntime);
                 moveToPrevRuntime();
 
@@ -395,8 +395,8 @@ StructDef   : KW_STRUCT ID PushEnv LC StructMemStmts RC {
                 $$->valModifier = "default";
                 $$->width = 4;
 
-                /* namespace runtime and register */
-                currRuntime->namespace = type;
+                /* name runtime and register */
+                currRuntime->name = type;
                 pushRuntime(structEnv, currRuntime);
                 moveToPrevRuntime();
                 

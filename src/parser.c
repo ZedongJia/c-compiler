@@ -2429,8 +2429,8 @@ yyreduce:
                 (yyval.node)->valModifier = "default";
                 (yyval.node)->width = 4;
 
-                /* namespace runtime and register */
-                currRuntime->namespace = type;
+                /* name runtime and register */
+                currRuntime->name = type;
                 pushRuntime(structEnv, currRuntime);
                 moveToPrevRuntime();
 
@@ -2464,8 +2464,8 @@ yyreduce:
                 (yyval.node)->valModifier = "default";
                 (yyval.node)->width = 4;
 
-                /* namespace runtime and register */
-                currRuntime->namespace = type;
+                /* name runtime and register */
+                currRuntime->name = type;
                 pushRuntime(structEnv, currRuntime);
                 moveToPrevRuntime();
                 
