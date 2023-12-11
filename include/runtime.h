@@ -2,8 +2,9 @@
 #define RUNTIME
 #define SYMBOL_SIZE 512
 #define ENV_SIZE 1024
-#include <node.h>
 #include <foutput.h>
+#include <node.h>
+
 
 // symbol <-map-> variable
 typedef struct Symbol
@@ -22,7 +23,7 @@ typedef struct Symbol
 
 typedef struct Runtime
 {
-    char *namespace;
+    char *name;
     Symbol *symbols[SYMBOL_SIZE]; // symbols
     int numOfSymbols;             // number of symbols
     struct Runtime *prev;         // previous runtime
@@ -47,7 +48,7 @@ void initEnv();
 
 void pushRuntime(Environment *env, Runtime *runtime);
 
-Runtime *findRuntimeByNamespace(Environment *env, char *namespace);
+Runtime *findRuntimeByName(Environment *env, char *name);
 
 void moveToNextRuntime(int level);
 

@@ -8,7 +8,7 @@ Runtime *createRuntime()
     runtime->prev = NULL;
     runtime->level = 0;
     runtime->offset = 0;
-    runtime->namespace = "default";
+    runtime->name = "default";
     return runtime;
 }
 
@@ -104,11 +104,11 @@ void pushRuntime(Environment *env, Runtime *runtime)
     env->size++;
 }
 
-Runtime *findRuntimeByNamespace(Environment *env, char *namespace)
+Runtime *findRuntimeByName(Environment *env, char *name)
 {
     for (int i = 0; i < env->size; i++)
     {
-        if (strcmp(env->ptrs[i]->namespace, namespace) == 0)
+        if (strcmp(env->ptrs[i]->name, name) == 0)
         {
             return env->ptrs[i];
         }
@@ -227,8 +227,8 @@ void printEnv()
     for (int i = 0; i < env->size; i++)
     {
         printf(
-            "\n\n\033[35m<--Runtime[ Namespace:%15s | Level:%2d ]-->\033[0m\n",
-            env->ptrs[i]->namespace,
+            "\n\n\033[35m<--Runtime[ Name:%15s | Level:%2d ]-->\033[0m\n",
+            env->ptrs[i]->name,
             env->ptrs[i]->level);
         printRuntime(env->ptrs[i]);
     }

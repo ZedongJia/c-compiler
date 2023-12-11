@@ -155,7 +155,6 @@ int __calculateSpanDim(Node *dimNode, int width, int initializerSize, int depth)
 
 void __getOffset(Node *node)
 {
-    // DEBUG: printf("runtime:%s, level:%d, offset:%d\n", node->runtime->namespace, node->runtime->level, node->runtime->offset);
     /* node should be var */
 
     // get offset
@@ -181,7 +180,7 @@ void __getOffset(Node *node)
     }
     else if (strstr(node->valType, "struct_"))
     {
-        Runtime *runtime = findRuntimeByNamespace(structEnv, node->valType);
+        Runtime *runtime = findRuntimeByName(structEnv, node->valType);
         node->width = runtime->offset;
     }
     if (node->arrayDim != NULL)
@@ -1335,7 +1334,7 @@ ExpVal *__dealExp(Node *exp)
         if (!syb)
         {
             // not found member
-            error(exp->line, MEMBER_NOT_FOUND, arg1->val, exp->runtime->namespace);
+            error(exp->line, MEMBER_NOT_FOUND, arg1->val, exp->runtime->name);
             return createExpVal("int", "int", "0");
         }
         char *offset = (char *)malloc(sizeof(char) * 10);
@@ -1364,7 +1363,7 @@ ExpVal *__dealExp(Node *exp)
         if (!syb)
         {
             // not found member
-            error(exp->line, MEMBER_NOT_FOUND, arg1->val, exp->runtime->namespace);
+            error(exp->line, MEMBER_NOT_FOUND, arg1->val, exp->runtime->name);
             return createExpVal("int", "int", "0");
         }
         char *offset = (char *)malloc(sizeof(char) * 10);
