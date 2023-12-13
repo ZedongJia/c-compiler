@@ -7,7 +7,7 @@
 
 #define MANY_INITIALIZER "too many initializer!"
 #define LESS_INITIALIZER "less initializer!"
-#define TYPE_INITIALIZER_ERROR "initializer type is not correct!"
+#define TYPE_INITIALIZER_ERROR "initializer should be surrounded by braces!"
 #define NOT_ALLOW_BRACE "only array and struct type can be initialized with brace syntax!"
 
 /* def,dec errors */

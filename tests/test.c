@@ -5,6 +5,8 @@
 int main(int argc, const char *argv[])
 {
     int a, b=5;
+    int c = {5};
+    int d[5] = 5;
     a = b;
     a = a + 5;
     for (int i = 0; i < 5; i++)
