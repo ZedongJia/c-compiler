@@ -49,6 +49,7 @@ Node *createNode(int type, char *val, int line, int level, int numOfChildren, ..
     // set default
     node->parent = NULL;
     node->width = 0;
+    node->typeWidth = 0;
 
     // set children
     node->numOfChildren = numOfChildren;

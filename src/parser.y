@@ -409,6 +409,7 @@ StructDef   : KW_STRUCT ID PushEnv LC StructMemStmts RC {
                 $$->valType = "struct";
                 $$->valModifier = "default";
                 $$->width = 4;
+                $$->typeWidth = 4;
 
                 /* name runtime and register */
                 currRuntime->name = type;
@@ -438,6 +439,7 @@ StructDef   : KW_STRUCT ID PushEnv LC StructMemStmts RC {
                 $$->valType = "struct";
                 $$->valModifier = "default";
                 $$->width = 4;
+                $$->typeWidth = 4;
 
                 /* name runtime and register */
                 currRuntime->name = type;

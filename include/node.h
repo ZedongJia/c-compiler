@@ -22,6 +22,7 @@ typedef struct Node
     int line;                 // line
     int level;                // level of brace
     int width;                // bite width
+    int typeWidth;            // width of type
     int numOfChildren;        // number of children node
     struct Node *parent;      // parent node
     struct Node **children;   // children node

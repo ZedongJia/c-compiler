@@ -119,7 +119,7 @@ ExpVal *createExpVal(char *type, char *valType, char *val)
 int __calculateSpanDim(Node *dimNode, int width, int initializerSize, int depth)
 {
     int spanDim = atoi(dimNode->val);
-    if (depth == 0 && spanDim == 0)
+    if (depth == 0 && spanDim == 0 && initializerSize == 0)
     {
         return 4;
     }
@@ -162,27 +162,33 @@ void __getOffset(Node *node)
     if (node->ptrStar != 0)
     {
         node->width = 4;
+        node->typeWidth = 4;
     }
     else if (strstr(node->valType, "int"))
     {
         node->width = 4;
+        node->typeWidth = 4;
     }
     else if (strstr(node->valType, "float"))
     {
         node->width = 4;
+        node->typeWidth = 4;
     }
     else if (strstr(node->valType, "char"))
     {
         node->width = 1;
+        node->typeWidth = 1;
     }
     else if (strstr(node->valType, "void"))
     {
         node->width = 0;
+        node->typeWidth = 0;
     }
     else if (strstr(node->valType, "struct_"))
     {
         Runtime *runtime = findRuntimeByName(structEnv, node->valType);
         node->width = runtime->offset;
+        node->typeWidth = runtime->offset;
     }
     if (node->arrayDim != NULL)
     {
@@ -242,12 +248,8 @@ void __dealInitializer(Node *var)
             {
             case BRACE_INITIALIZER:
             {
-                int needVals = var->symbol->offset / var->width;
-                if (initializer->numOfChildren < needVals)
-                {
-                    error(initializer->line, LESS_INITIALIZER);
-                }
-                else if (initializer->numOfChildren > needVals)
+                int needVals = var->width / var->typeWidth;
+                if (initializer->numOfChildren > needVals)
                 {
                     error(initializer->line, MANY_INITIALIZER);
                 }
@@ -635,6 +637,7 @@ void __dealStmt(Node *stmt, int isGlobal)
         sign = (char *)malloc(sizeof(char) * (8));
         sprintf(sign, "(%d)", manager->line);
         manager->codeList[condCode]->arg2 = sign;
+        break;
     }
     case FOR_START_STMT:
     { /**
@@ -743,6 +746,7 @@ void __dealStmt(Node *stmt, int isGlobal)
         {
             addCode(C_RETURN, NULL, NULL);
         }
+        break;
     }
     default:
     {
@@ -1468,7 +1472,7 @@ ExpVal *__dealExp(Node *exp)
         char *sign = (char *)malloc(sizeof(char) * (8));
         sprintf(sign, "(%d)", line);
         arg1->val = sign;
-        
+
         // add property
         arg1->complexType = syb->complexType;
         arg1->ptrStar = syb->ptr->ptrStar;

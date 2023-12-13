@@ -3,8 +3,7 @@
 // int a = 6;
 // int tesss(int a, char b, char *c, int *d, int arr[]);
 #include <stdio.h>
-#include "iostream"
-#define NUM 5
+
 int main(int argc, const char *argv[])
 {
     // int a, b=5;
