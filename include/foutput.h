@@ -11,12 +11,12 @@
 #define NOT_ALLOW_BRACE "only array and struct type can be initialized with brace syntax!"
 
 /* def,dec errors */
-#define VARIABLE_REDEFINED "variable %s has already been defined!"
-#define VARIABLE_REDECLARED "variable %s has already been declared!"
+#define VARIABLE_REDEFINED "variable `%s` has already been defined!"
+#define VARIABLE_REDECLARED "variable `%s` has already been declared!"
 
 /* not defined errors */
-#define VARIABLE_NOT_DEFINED "variable %s has not been defined!"
-#define FUNCTION_NOT_DEFINED "function %s has not been defined!"
+#define VARIABLE_NOT_DEFINED "variable `%s` has not been defined!"
+#define FUNCTION_NOT_DEFINED "function `%s` has not been defined!"
 
 /* array errors */
 #define ARRAY_INCOMPLETED "incompleted array is not allowed!"
@@ -28,17 +28,17 @@
 
 /* transform errors */
 #define TRANSFORM_TYPE_ERROR "a value of type `%s` can not be converted to type `%s`!"
-#define TRANSFORM_PTR_ERROR "can not convert %d-D ptr to %d-D ptr!"
+#define TRANSFORM_PTR_ERROR "can not convert `%d-D` ptr to `%d-D` ptr!"
 
 /* operator errors */
 #define DELIVERY_TYPE_ERROR "value must be int, not `%s`!"
-#define OPERATOR_TYPE_ERROR "%s can not be calculated with %s!"
+#define OPERATOR_TYPE_ERROR "`%s` can not be calculated with `%s`!"
 #define GET_DATA_ERROR "expression must be ptr!"
 #define POINTER_ERROR "* must be applied to struct ptr!"
 #define DOT_ERROR "expression must be struct type, not ptr!"
 
 /* struct errors */
-#define MEMBER_NOT_FOUND "can not found %s in %s!"
+#define MEMBER_NOT_FOUND "can not find `%s` in `%s` namespace!"
 
 
 /* function errors */

@@ -15,6 +15,7 @@
 }
 
 %type <node> Program
+%type <node> Include Define
 %type <node> GlobalStmts LocalStmts GlobalStmt LocalStmt Stmt StructMemStmts StructMemStmt
 %type <node> VarDefStmt FuncDefStmt StructDefStmt
 %type <node> VarDecStmt FuncDecStmt
@@ -51,8 +52,6 @@
 /* just for enumurate */
 %token PROGRAM
 
-/* pretreatment */
-%token PRE_INCLUDE PRE_DEFINE
 /* declare (can be many) */
 %token VAR_DEC ARG_DEC INITIALIZER BRACE_INITIALIZER FUNC_DEC
 /* define (only once) */
@@ -101,10 +100,10 @@
 %right DMINUS         // --
 %right DPLUS          // ++
 %right SMINUS         // -
+%left LP RP           // ()
+%left LB RB           // []
 %left POINTER         // ->
 %left DOT             // .
-%left LP RP LC RC     // ()
-%left LB RB           // []
 
 /* no priority */
 %nonassoc KW_ELSE
@@ -151,6 +150,12 @@ GlobalStmt  : VarDefStmt {
             }
             | StructDefStmt {
                 $$ = $1;
+            }
+            | Include {
+                $$ = NULL;
+            }
+            | Define {
+                $$ = NULL;
             }
             | SEMI {
                 $$ = NULL;
@@ -221,6 +226,45 @@ StructMemStmt   : VarDefStmt {
                 }
                 ;
 
+/* pretreatment */
+/*pretreatment*/
+Include:    INCLUDE SMALLER ID DOT ID GREATER {
+                char *file = (char*)malloc(sizeof(char) * 20);
+                strcpy(file, $3->val);
+                strcat(file, ".");
+                strcat(file, $5->val);
+                /* TODO: import file */
+                printf("\033[36mImport %s\033[0m\n", file);
+                free(file);
+            }
+            | INCLUDE SMALLER ID GREATER
+            {
+                char *file = (char*)malloc(sizeof(char) * 20);
+                strcat(file, $3->val);
+                /* TODO: import file */
+                printf("\033[36mImport %s\033[0m\n", file);
+                free(file);
+            }
+            |
+            INCLUDE STRING{
+                char *file = $2->val;
+                /* TODO: import file */
+                printf("\033[36mImport %s\033[0m\n", file);
+                free(file);
+            }
+            ;
+Define:     DEFINE ID Exp{
+                /* TODO: replace */
+                deleteNode($2);
+                deleteNode($3);
+            }
+            |
+            DEFINE ID BraceInitializer {
+                /* TODO: replace */
+                deleteNode($2);
+                deleteNode($3);
+            }
+            ;
 
 /* declare */
 VarDecStmt  : TypeSpecifier VarDec SEMI {

@@ -34,6 +34,6 @@ if %1 equ clean (
     gcc -fexec-charset=gbk -o bin/c src/main.c -I include src/flex.c src/node.c src/parser.c src/foutput.c src/runtime.c src/code.c
 ) else if %1 equ test (
     cd bin
-    c ..\tests\test.c
+    c ..\tests\newtest.c
     cd ..
 )

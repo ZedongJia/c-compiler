@@ -880,6 +880,7 @@ ExpVal *__dealExp(Node *exp)
        */
         ExpVal *arg1 = __dealExp(exp->children[1]);
         ExpVal *arg2 = __dealExp(exp->children[0]);
+
         if (strcmp(arg2->type, "addr") != 0)
         {
             /**
@@ -1446,9 +1447,9 @@ ExpVal *__dealExp(Node *exp)
        * --Exp
        * --Exp
        */
-        ExpVal *arg1 = __dealExp(exp->children[1]);
+        ExpVal *arg1 = createExpVal("addr", NULL, exp->children[1]->val);
         ExpVal *arg2 = __dealExp(exp->children[0]);
-        Runtime *runtime = exp->children[0]->runtime;
+        Runtime *runtime = findRuntimeByName(structEnv, arg2->valType);
         Symbol *syb = lookup(runtime, arg1->val, 0);
         if (arg2->complexType != NULL && strstr(arg2->complexType, "ptr"))
         {
@@ -1458,7 +1459,7 @@ ExpVal *__dealExp(Node *exp)
         if (!syb)
         {
             // not found member
-            error(exp->line, MEMBER_NOT_FOUND, arg1->val, exp->runtime->name);
+            error(exp->line, MEMBER_NOT_FOUND, arg1->val, runtime->name);
             return createExpVal("int", "int", "0");
         }
         char *offset = (char *)malloc(sizeof(char) * 10);
@@ -1467,6 +1468,11 @@ ExpVal *__dealExp(Node *exp)
         char *sign = (char *)malloc(sizeof(char) * (8));
         sprintf(sign, "(%d)", line);
         arg1->val = sign;
+        
+        // add property
+        arg1->complexType = syb->complexType;
+        arg1->ptrStar = syb->ptr->ptrStar;
+        arg1->valType = syb->type;
         return arg1;
     }
     case POINTER:
@@ -1475,19 +1481,19 @@ ExpVal *__dealExp(Node *exp)
        * --Exp
        * --Exp
        */
-        ExpVal *arg1 = __dealExp(exp->children[1]);
+        ExpVal *arg1 = createExpVal("addr", NULL, exp->children[1]->val);
         ExpVal *arg2 = __dealExp(exp->children[0]);
         if (arg2->complexType == NULL || !strstr(arg2->complexType, "ptr"))
         {
             error(exp->line, POINTER_ERROR);
             return createExpVal("int", "int", "0");
         }
-        Runtime *runtime = exp->children[0]->runtime;
+        Runtime *runtime = findRuntimeByName(structEnv, arg2->valType);
         Symbol *syb = lookup(runtime, arg1->val, 0);
         if (!syb)
         {
             // not found member
-            error(exp->line, MEMBER_NOT_FOUND, arg1->val, exp->runtime->name);
+            error(exp->line, MEMBER_NOT_FOUND, arg1->val, runtime->name);
             return createExpVal("int", "int", "0");
         }
         char *offset = (char *)malloc(sizeof(char) * 10);
@@ -1496,6 +1502,11 @@ ExpVal *__dealExp(Node *exp)
         char *sign = (char *)malloc(sizeof(char) * (8));
         sprintf(sign, "(%d)", line);
         arg1->val = sign;
+
+        // add property
+        arg1->complexType = syb->complexType;
+        arg1->ptrStar = syb->ptr->ptrStar;
+        arg1->valType = syb->type;
         return arg1;
     }
     default:

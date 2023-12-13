@@ -262,14 +262,6 @@ void printNode(Node *node, int depth, char *prefix)
         printf("IDENTITY:%s \033[32m(%d)\033[0m", node->val, node->line);
         break;
 
-    // pretreatment key word
-    case INCLUDE:
-        printf("PRETREATMENT:%s \033[32m(%d)\033[0m", "include", node->line);
-        break;
-    case DEFINE:
-        printf("PRETREATMENT:%s \033[32m(%d)\033[0m", "define", node->line);
-        break;
-
     // program
     case PROGRAM:
         printf("PROGRAM \033[32m(%d)\033[0m", node->line);
@@ -317,7 +309,8 @@ void printNode(Node *node, int depth, char *prefix)
         break;
 
     // variable
-    case VAR: {
+    case VAR:
+    {
         printf("VARIABLE \033[32m(%d)\033[0m", node->line);
         printf("\n");
         __printPrefix("*--", depth + 1);
@@ -520,7 +513,8 @@ void __analysisVar(Node *node, Node *specifier)
      */
     switch (node->type)
     {
-    case VAR: {
+    case VAR:
+    {
         // add value modifier
         node->valModifier = specifier->valModifier;
         // add value type
