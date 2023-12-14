@@ -456,6 +456,10 @@ StructDef   : KW_STRUCT ID PushEnv LC StructMemStmts RC {
             ;
 
 /* variable */
+/*
+    complexType can be enumrated, (ptr, arr ptr_arr, arr_ptr ...)
+    leaving them for filling
+*/
 Var : ID {
         $$ = createNode(VAR, NULL, $1->line, level, 0);
         $$->lexeme = $1->val;
@@ -500,7 +504,7 @@ Var : ID {
     }
     | Stars ID ArrayDims {
         $$ = createNode(VAR, NULL, $1->line, level, 0);
-        $$->complexType = "ptr_arr";
+        $$->complexType = "ptr";
         $$->lexeme = $2->val;
         $$->ptrStar = atoi($1->val);
         $$->arrayDim = $3;

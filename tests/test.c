@@ -3,30 +3,36 @@
 // int a = 6;
 // int tesss(int a, char b, char *c, int *d, int arr[]);
 #include <stdio.h>
+struct Test
+{
+    int a;
+    /* data */
+};
 
 int main(int argc, const char *argv[])
 {
-    // int a, b=5;
-    // int c = {5};
-    // int d[5] = 5;
-    // a = b;
-    // a = a + 5;
-    // for (int i = 0; i < 5; i++)
-    // {
-    //     a = a + i;
-    // }
-    // if ( a > 5 || a != 8)
-    // {
-    //     a = 111;
-    // } else if ( a != 3)
-    // {
-    //     a = 222;
-    // } else {
-    //     a = 3;
-    // }
-    // while (a != 0) {
-    //     a = 0;
-    // }
+    struct Test s[10];
+    int a, b=5;
+    int c = {5};
+    int d[5] = 5;
+    a = b;
+    a = a + 5;
+    for (int i = 0; i < 5; i++)
+    {
+        a = a + i;
+    }
+    if ( a > 5 || a != 8)
+    {
+        a = 111;
+    } else if ( a != 3)
+    {
+        a = 222;
+    } else {
+        a = 3;
+    }
+    while (a != 0) {
+        a = 0;
+    }
     return 0;
 }
 // struct test

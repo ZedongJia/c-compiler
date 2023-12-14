@@ -22,7 +22,7 @@
 
 /* assign errors */
 #define ASSIGN_NOT_ALLOW "the left side of the assignment must be a modifiable value!"
-#define ASSIGE_COMPLEX_TYPE_ERROR "a value of `%d-D %s` can not be assigned to type `%d-D %s`!"
+#define ASSIGE_COMPLEX_TYPE_ERROR "a value of `%d-D %s` can not be assigned to `%d-D %s`!"
 #define ASSIGN_TYPE_ERROR "a value of type `%s` can not be assigned to type `%s`!"
 
 /* transform errors */

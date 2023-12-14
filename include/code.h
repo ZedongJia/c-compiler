@@ -34,6 +34,7 @@ enum CodeOp
     C_FLOAT,
     C_INT,
     C_CHAR,
+    C_VOID,
     C_POINTER,
     // get
     C_GET_DATA,
@@ -114,5 +115,8 @@ int addCode(int op, char *arg1, char *arg2);
 void deleteCodeManager();
 
 void printCodeManager();
+
+// expval
+void printExp(ExpVal * val);
 
 #endif

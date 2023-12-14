@@ -59,6 +59,12 @@ void printOp(int op)
     case C_CHAR:
         printf("%10s", "char");
         break;
+    case C_VOID:
+        printf("%10s", "void");
+        break;
+    case C_POINTER:
+        printf("%10s", "pointer");
+        break;
     case C_GET_DATA:
         printf("%10s", "read");
         break;
@@ -764,19 +770,19 @@ ExpVal *__dealExp(Node *exp)
         /* base type */
     case INT:
     {
-        return createExpVal("int", "int", exp->val);
+        return createExpVal("literal", "int", exp->val);
     }
     case FLOAT:
     {
-        return createExpVal("float", "float", exp->val);
+        return createExpVal("literal", "float", exp->val);
     }
     case CHAR:
     {
-        return createExpVal("char", "char", exp->val);
+        return createExpVal("literal", "char", exp->val);
     }
     case STRING:
     {
-        return createExpVal("string", "string", exp->val);
+        return createExpVal("literal", "string", exp->val);
     }
     case ID:
     {
@@ -825,12 +831,13 @@ ExpVal *__dealExp(Node *exp)
             char *sign = (char *)malloc(sizeof(char) * (8));
             sprintf(sign, "(%d)", line);
             arg1->val = sign;
+            arg1->type = "addr";
             arg1->valType = exp->valType;
             arg1->complexType = "ptr";
+            arg1->ptrStar = exp->ptrStar;
             return arg1;
         }
         return arg1;
-        break;
     }
     case FUNC_CALL:
     { /**
@@ -838,14 +845,15 @@ ExpVal *__dealExp(Node *exp)
        * --ID
        * --Args (?)
        */
+        /* id identifies the return type and entry of the function */
         Node *id = exp->children[0];
         Symbol *syb = lookup(id->runtime, id->val, 1);
         if (syb == NULL)
         {
             error(exp->line, FUNCTION_NOT_DEFINED, id->val);
-            return createExpVal("int", "int", "0");
+            return createExpVal("literal", "int", "0");
         }
-        if (exp->numOfChildren > 0)
+        if (exp->numOfChildren > 1)
         {
             Node *args = exp->children[1];
             if (syb->numOfArgs > args->numOfChildren)
@@ -872,8 +880,9 @@ ExpVal *__dealExp(Node *exp)
         int line = addCode(C_CALL, id->val, numOfArgs);
         char *sign = (char *)malloc(sizeof(char) * (8));
         sprintf(sign, "(%d)", line);
-        ExpVal *rt = createExpVal("id", syb->type, sign);
+        ExpVal *rt = createExpVal("addr", syb->type, sign);
         rt->complexType = syb->complexType;
+        rt->ptrStar = syb->ptr->ptrStar;
         return rt;
     }
     case ASSIGN:
@@ -884,7 +893,6 @@ ExpVal *__dealExp(Node *exp)
        */
         ExpVal *arg1 = __dealExp(exp->children[1]);
         ExpVal *arg2 = __dealExp(exp->children[0]);
-
         if (strcmp(arg2->type, "addr") != 0)
         {
             /**
@@ -923,10 +931,10 @@ ExpVal *__dealExp(Node *exp)
         int line = addCode(C_ASSIGN, arg1->val, arg2->val);
         char *sign = (char *)malloc(sizeof(char) * (8));
         sprintf(sign, "(%d)", line);
-        ExpVal *assignVal = createExpVal(arg2->valType, arg2->valType, sign);
-        free(arg2);
+        free(arg2->val);
+        arg2->val = sign;
         free(arg1);
-        return assignVal;
+        return arg2;
         break;
     }
     case OR:
@@ -1356,6 +1364,12 @@ ExpVal *__dealExp(Node *exp)
         char *sign = (char *)malloc(sizeof(char) * (8));
         sprintf(sign, "(%d)", line);
         arg1->val = sign;
+        arg1->ptrStar++;
+        if (arg1->ptrStar > 0)
+        {
+            arg1->complexType = "ptr";
+        }
+        arg1->type = "literal";
         return arg1;
     }
     case GET_DATA:
@@ -1373,6 +1387,15 @@ ExpVal *__dealExp(Node *exp)
         char *sign = (char *)malloc(sizeof(char) * (8));
         sprintf(sign, "(%d)", line);
         arg1->val = sign;
+        if (arg1->ptrStar != 0)
+        {
+            arg1->ptrStar--;
+            if (arg1->ptrStar == 0)
+            {
+                arg1->complexType = NULL;
+            }
+        }
+        arg1->type = "addr";
         return arg1;
     }
     case GET_ARRAY_DATA:
@@ -1399,8 +1422,15 @@ ExpVal *__dealExp(Node *exp)
         // sprintf(sign, "(%d)", line);
         // arg1->val = sign;
         // arg1->type = "addr";
-        arg1->complexType = "ptr";
-        arg1->ptrStar = arg1->ptrStar != 0 ? arg1->ptrStar - 1 : 0;
+        if (arg1->ptrStar != 0)
+        {
+            arg1->ptrStar--;
+            if (arg1->ptrStar == 0)
+            {
+                arg1->complexType = NULL;
+            }
+        }
+        arg1->type = "addr";
         return arg1;
     }
     case FDMINUS:
@@ -1458,13 +1488,13 @@ ExpVal *__dealExp(Node *exp)
         if (arg2->complexType != NULL && strstr(arg2->complexType, "ptr"))
         {
             error(exp->line, DOT_ERROR);
-            return createExpVal("int", "int", "0");
+            return createExpVal("literal", "int", "0");
         }
         if (!syb)
         {
             // not found member
             error(exp->line, MEMBER_NOT_FOUND, arg1->val, runtime->name);
-            return createExpVal("int", "int", "0");
+            return createExpVal("literal", "int", "0");
         }
         char *offset = (char *)malloc(sizeof(char) * 10);
         itoa(syb->offset - syb->ptr->width, offset, 10);
@@ -1490,7 +1520,7 @@ ExpVal *__dealExp(Node *exp)
         if (arg2->complexType == NULL || !strstr(arg2->complexType, "ptr"))
         {
             error(exp->line, POINTER_ERROR);
-            return createExpVal("int", "int", "0");
+            return createExpVal("literal", "int", "0");
         }
         Runtime *runtime = findRuntimeByName(structEnv, arg2->valType);
         Symbol *syb = lookup(runtime, arg1->val, 0);
@@ -1498,7 +1528,7 @@ ExpVal *__dealExp(Node *exp)
         {
             // not found member
             error(exp->line, MEMBER_NOT_FOUND, arg1->val, runtime->name);
-            return createExpVal("int", "int", "0");
+            return createExpVal("literal", "int", "0");
         }
         char *offset = (char *)malloc(sizeof(char) * 10);
         itoa(syb->offset - syb->ptr->width, offset, 10);
@@ -1537,7 +1567,7 @@ int __dealCast(int line, char *valType, ExpVal *tra, char *errorMsg)
     }
     else if (strstr(valType, "int"))
     {
-        if (strstr(tra->valType, "float") || strstr(tra->valType, "char"))
+        if (strstr(tra->valType, "float") || strstr(tra->valType, "char") || strstr(tra->valType, "void"))
         {
             // type cast to int
             int line = addCode(C_INT, tra->val, NULL);
@@ -1555,7 +1585,7 @@ int __dealCast(int line, char *valType, ExpVal *tra, char *errorMsg)
     }
     else if (strstr(valType, "float"))
     {
-        if (strstr(tra->valType, "int") || strstr(tra->valType, "char"))
+        if (strstr(tra->valType, "int") || strstr(tra->valType, "char") || strstr(tra->valType, "void"))
         {
             // type cast to float
             int line = addCode(C_FLOAT, tra->val, NULL);
@@ -1573,7 +1603,7 @@ int __dealCast(int line, char *valType, ExpVal *tra, char *errorMsg)
     }
     else if (strstr(valType, "char"))
     {
-        if (strstr(tra->valType, "int") || strstr(tra->valType, "float"))
+        if (strstr(tra->valType, "int") || strstr(tra->valType, "float") || strstr(tra->valType, "void"))
         {
             // type cast to char
             int line = addCode(C_CHAR, tra->val, NULL);
@@ -1588,6 +1618,15 @@ int __dealCast(int line, char *valType, ExpVal *tra, char *errorMsg)
             error(line, errorMsg, tra->valType, valType);
             return 0;
         }
+    }
+    else if (strstr(valType, "void"))
+    {
+        // type cast to void
+        int line = addCode(C_VOID, tra->val, NULL);
+        char *sign = (char *)malloc(sizeof(char) * (8));
+        sprintf(sign, "(%d)", line);
+        tra->val = sign;
+        tra->valType = valType;
     }
     else
     {
@@ -1654,4 +1693,12 @@ void printCodeManager()
     printf("\033[33m(%4s) < %10s , %10s , %10s >\033[0m\n", "line", "op", "arg1", "arg2");
     for (int i = 0; i < manager->line; i++)
         printCode(manager->codeList[i]);
+}
+
+// expval
+void printExp(ExpVal *val)
+{
+    printf(
+        "type:%s, valType:%s, complexType:%s, ptrStar:%d, val:%s\n",
+        val->type, val->valType, val->complexType, val->ptrStar, val->val);
 }
