@@ -33,8 +33,8 @@
 #define DELIVERY_TYPE_ERROR "value must be int, not `%s`!"
 #define OPERATOR_TYPE_ERROR "`%s` can not be calculated with `%s`!"
 #define GET_DATA_ERROR "expression must be ptr!"
-#define POINTER_ERROR "* must be applied to struct ptr!"
-#define DOT_ERROR "expression must be struct type, not ptr!"
+#define POINTER_ERROR "-> must be applied to struct ptr!"
+#define DOT_ERROR "expression must be struct type, not struct ptr!"
 
 /* struct errors */
 #define MEMBER_NOT_FOUND "can not find `%s` in `%s` namespace!"
