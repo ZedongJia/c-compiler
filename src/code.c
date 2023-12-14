@@ -95,15 +95,6 @@ void printOp(int op)
     case C_END_FUNC:
         printf("%10s", "end func");
         break;
-    case C_STRUCT:
-        printf("%10s", "struct");
-        break;
-    case C_END_STRUCT:
-        printf("%10s", "end struct");
-        break;
-    case C_DEF:
-        printf("%10s", "def");
-        break;
     default:
         break;
     }
@@ -412,9 +403,6 @@ int __dealVar(Node *var, int isGlobal, int isDeclare)
                 // do not duplicate
                 __getOffset(var);
                 var->symbol->isDefination = 1;
-                char *width = (char *)malloc(sizeof(char) * 4);
-                itoa(var->width, width, 10);
-                addCode(C_DEF, var->lexeme, width);
                 // has initializer ? do initialize
                 /**
                  * BraceInitializer or Initializer ?
@@ -436,9 +424,6 @@ int __dealVar(Node *var, int isGlobal, int isDeclare)
         {
             // set defination
             __getOffset(var);
-            char *width = (char *)malloc(sizeof(char) * 4);
-            itoa(var->width, width, 10);
-            addCode(C_DEF, var->lexeme, width);
             // has initializer ? do initialize
             /**
              * BraceInitializer or Initializer ?
@@ -547,7 +532,6 @@ void __dealStmt(Node *stmt, int isGlobal)
        * --STMTS (?)
        * --VAR_DEF/VAR_DEC (?)
        */
-        addCode(C_STRUCT, stmt->lexeme, NULL);
         __getOffset(stmt);
         if (stmt->numOfChildren > 0)
         {
@@ -555,18 +539,12 @@ void __dealStmt(Node *stmt, int isGlobal)
             {
                 // STMTS
                 __dealStmts(stmt->children[0]);
-                addCode(C_END_STRUCT, NULL, NULL);
             }
             else
             {
-                addCode(C_END_STRUCT, NULL, NULL);
                 // VAR_DEF or VAR_DEC
                 __dealStmt(stmt->children[0], 1);
             }
-        }
-        else
-        {
-            addCode(C_END_STRUCT, NULL, NULL);
         }
         if (stmt->numOfChildren > 1)
         {
@@ -1546,6 +1524,7 @@ ExpVal *__dealExp(Node *exp)
     default:
         break;
     }
+    return NULL;
 }
 
 int __dealCast(int line, char *valType, ExpVal *tra, char *errorMsg)

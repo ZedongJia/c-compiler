@@ -43,10 +43,7 @@ enum CodeOp
     C_EXIT,
     C_RETURN,
     C_FUNC,
-    C_END_FUNC,
-    C_STRUCT,
-    C_END_STRUCT,
-    C_DEF,
+    C_END_FUNC
 };
 
 void printOp(int op);
