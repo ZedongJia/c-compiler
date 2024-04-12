@@ -20,6 +20,10 @@ run build # 构建文件于`bin/`下
 run test  # 测试`tests/test.c`
 ```
 
+## 结果图
+![Sample1](./1.png)
+![Sample2](./2.png)
+
 ## 相关概念设计
 
 ### 程序
